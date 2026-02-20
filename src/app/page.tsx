@@ -14,7 +14,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [school, setSchool] = useState('');
-  const [initials, setInitials] = useState('');
+  const [name, setName] = useState('');
 
   useEffect(() => {
     fetch('/api/leaderboard')
@@ -27,7 +27,7 @@ export default function HomePage() {
 
     // Load existing names
     setSchool(localStorage.getItem('suneung1_school') || '');
-    setInitials(localStorage.getItem('suneung1_initials') || '');
+    setName(localStorage.getItem('suneung1_name') || '');
   }, []);
 
   const handleStart = () => {
@@ -36,12 +36,12 @@ export default function HomePage() {
       devId = Math.random().toString(36).substring(2, 9);
       localStorage.setItem('suneung1_deviceId', devId);
     }
-    const finalSchool = school.trim() || '무소속';
-    const finalInitials = initials.trim().toUpperCase() || 'AAA';
+    const finalSchool = school.trim() || '소속없음';
+    const finalName = name.trim() || '수험생';
 
     localStorage.setItem('suneung1_school', finalSchool);
-    localStorage.setItem('suneung1_initials', finalInitials);
-    localStorage.setItem('suneung1_userId', `${finalSchool} ${finalInitials}#${devId}`);
+    localStorage.setItem('suneung1_name', finalName);
+    localStorage.setItem('suneung1_userId', `${finalSchool} ${finalName}#${devId}`);
 
     router.push('/play');
   };
@@ -88,19 +88,19 @@ export default function HomePage() {
               <div className="flex gap-3 w-full">
                 <input
                   type="text"
-                  placeholder="소속 (예: 백석고)"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  maxLength={10}
+                  placeholder="성명 (실명)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={5}
                   className="flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal"
                 />
                 <input
                   type="text"
-                  placeholder="이니셜 (3자)"
-                  value={initials}
-                  onChange={(e) => setInitials(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-                  maxLength={3}
-                  className="w-28 px-4 py-3 border border-slate-300 rounded font-sans text-center uppercase outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal"
+                  placeholder="소속 (선택)"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  maxLength={10}
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal"
                 />
               </div>
             </div>
