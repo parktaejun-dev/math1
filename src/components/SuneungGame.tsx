@@ -86,8 +86,6 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     clearInterval(timerRef.current!);
                     return 0;
                 }
-                // Tick sound every second (louder when urgent)
-                if (prev <= 11) playTick();
                 return prev - 1;
             });
         }, 1000);
@@ -96,6 +94,13 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [isReady, loadQuestion]);
+
+    // Tick sound for last 10 seconds (outside state updater for mobile compatibility)
+    useEffect(() => {
+        if (timeLeft > 0 && timeLeft <= 10 && !isGameOver) {
+            playTick();
+        }
+    }, [timeLeft, isGameOver]);
 
     // Game over when time runs out
     useEffect(() => {
@@ -138,7 +143,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             if (isCorrect) {
                 const newCombo = combo + 1;
                 const newIsFever = newCombo >= COMBO_FEVER_THRESHOLD;
-                newLevel = Math.floor(newCombo / 10) + 1;
+                newLevel = Math.max(currentLevel, Math.floor(newCombo / 10) + 1); // Never drops below current
 
                 if (newLevel > currentLevel) {
                     setCurrentLevel(newLevel);
@@ -234,7 +239,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             </div>
 
             {/* Header */}
-            <header className="w-full bg-paper border-b border-black flex-shrink-0 px-4 py-2 flex items-center justify-between z-10 shadow-sm h-12 relative overflow-hidden">
+            <header className="w-full bg-paper border-b border-black flex-shrink-0 px-4 py-2 flex items-center justify-between z-10 shadow-sm h-12 relative">
                 {/* Level Up Flash */}
                 {showLevelUp && (
                     <div className="absolute inset-0 bg-blue-500/20 animate-pulse pointer-events-none" />
