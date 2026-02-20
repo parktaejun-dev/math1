@@ -51,12 +51,12 @@ export default function HomePage() {
       <div className="bg-paper shadow-paper border border-[#d4d4d4] w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 mx-auto relative overflow-hidden">
         <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8">
           <div className="text-sm font-serif">
-            <span className="block text-gray-500">2024학년도 대학수학능력시험 대비</span>
+            <span className="block text-gray-500">2027학년도 대학수학능력시험 대비</span>
             <span className="font-bold text-lg">수학 영역</span>
           </div>
           <div className="text-right">
             <div className="border border-black px-4 py-1 text-sm font-serif inline-block">
-              제 1 교시
+              제 2 교시
             </div>
           </div>
         </header>
