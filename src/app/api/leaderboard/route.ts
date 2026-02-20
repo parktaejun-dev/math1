@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const leaderboard = await getLeaderboard();
-        const topScores = await leaderboard.getTopScores(50);
+        const topScores = await leaderboard.getTopScores(10);
 
         return NextResponse.json({
             leaderboard: topScores,
