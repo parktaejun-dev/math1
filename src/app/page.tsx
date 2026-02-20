@@ -23,12 +23,21 @@ export default function HomePage() {
     // Check initial sound pref
     setSoundOn(isSoundEnabled());
 
-    // Attempt to play school bell on mount if not played yet in this session
-    if (!audioPlayed.current && isSoundEnabled()) {
-      audioPlayed.current = true;
-      // Some browsers block this unless interacted. We just call it.
-      setTimeout(() => playSchoolBell(), 500);
+    // Browsers block autoplay audio without user gesture.
+    // Play school bell on the FIRST click/tap anywhere on the page.
+    const playOnFirstInteraction = () => {
+      if (!audioPlayed.current && isSoundEnabled()) {
+        audioPlayed.current = true;
+        playSchoolBell();
+      }
+      document.removeEventListener('click', playOnFirstInteraction);
+      document.removeEventListener('touchstart', playOnFirstInteraction);
+    };
+    if (!audioPlayed.current) {
+      document.addEventListener('click', playOnFirstInteraction, { once: true });
+      document.addEventListener('touchstart', playOnFirstInteraction, { once: true });
     }
+
     fetch('/api/leaderboard')
       .then((r) => r.json())
       .then((data) => {
@@ -40,6 +49,11 @@ export default function HomePage() {
     // Load existing names
     setSchool(localStorage.getItem('suneung1_school') || '');
     setName(localStorage.getItem('suneung1_name') || '');
+
+    return () => {
+      document.removeEventListener('click', playOnFirstInteraction);
+      document.removeEventListener('touchstart', playOnFirstInteraction);
+    };
   }, []);
 
   const handleStart = () => {
