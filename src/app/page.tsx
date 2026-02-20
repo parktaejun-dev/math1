@@ -17,26 +17,21 @@ export default function HomePage() {
   const [school, setSchool] = useState('');
   const [name, setName] = useState('');
   const [soundOn, setSoundOn] = useState(true);
+  const [showNotice, setShowNotice] = useState(false);
   const audioPlayed = useRef(false);
 
-  useEffect(() => {
-    // Check initial sound pref
-    setSoundOn(isSoundEnabled());
-
-    // Browsers block autoplay audio without user gesture.
-    // Play school bell on the FIRST click/tap anywhere on the page.
-    const playOnFirstInteraction = () => {
-      if (!audioPlayed.current && isSoundEnabled()) {
-        audioPlayed.current = true;
-        playSchoolBell();
-      }
-      document.removeEventListener('click', playOnFirstInteraction);
-      document.removeEventListener('touchstart', playOnFirstInteraction);
-    };
-    if (!audioPlayed.current) {
-      document.addEventListener('click', playOnFirstInteraction, { once: true });
-      document.addEventListener('touchstart', playOnFirstInteraction, { once: true });
+  const handleNoticeToggle = () => {
+    const next = !showNotice;
+    setShowNotice(next);
+    // Play school bell on first interaction (accordion click)
+    if (!audioPlayed.current && isSoundEnabled()) {
+      audioPlayed.current = true;
+      playSchoolBell();
     }
+  };
+
+  useEffect(() => {
+    setSoundOn(isSoundEnabled());
 
     fetch('/api/leaderboard')
       .then((r) => r.json())
@@ -46,14 +41,8 @@ export default function HomePage() {
       })
       .catch(() => setIsLoading(false));
 
-    // Load existing names
     setSchool(localStorage.getItem('suneung1_school') || '');
     setName(localStorage.getItem('suneung1_name') || '');
-
-    return () => {
-      document.removeEventListener('click', playOnFirstInteraction);
-      document.removeEventListener('touchstart', playOnFirstInteraction);
-    };
   }, []);
 
   const handleStart = () => {
@@ -112,14 +101,30 @@ export default function HomePage() {
                 기초 연산 능력 평가 및 타임어택
               </p>
             </div>
-            <div className="max-w-xl mx-auto mt-8 border-y border-gray-300 py-6">
-              <p className="font-sans text-sm leading-7 text-justify break-keep">
-                <strong>[수험생 유의사항]</strong><br />
-                1. 본 게임은 수능 수학 1번 문제 유형을 기반으로 한 60초 타임어택입니다.<br />
-                2. 문제는 5지선다형이며, 빠르고 정확하게 정답을 선택해야 높은 점수를 획득할 수 있습니다.<br />
-                3. 연속 정답 시 콤보 점수가 부여되며, 랭킹에 기록됩니다.<br />
-                4. 시험이 시작되면 중도에 멈출 수 없습니다.
-              </p>
+            <div className="max-w-xl mx-auto mt-8 border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={handleNoticeToggle}
+                className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left cursor-pointer"
+              >
+                <span className="font-serif font-bold text-sm text-gray-800 tracking-wide">◀ 유의사항 확인 (클릭)</span>
+                <span className={`text-gray-500 text-xs transition-transform duration-300 ${showNotice ? 'rotate-180' : ''}`}>▼</span>
+              </button>
+              <div
+                className={`transition-all duration-400 ease-in-out overflow-hidden ${showNotice ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+              >
+                <div className="px-5 py-4 bg-white border-t border-gray-200">
+                  <p className="font-sans text-sm leading-7 text-justify break-keep text-gray-700">
+                    1. 문제지의 해당란에 <strong>소속</strong>과 <strong>이름</strong>을 정확히 기입하시오.<br />
+                    2. 답안은 5지선다 OMR 형식이며, 하나의 보기만 선택할 수 있습니다.<br />
+                    3. 제한시간은 <strong>60초</strong>이며, 연속 정답 시 추가 시간과 콤보 보너스가 부여됩니다.<br />
+                    4. 10콤보 달성 시 <strong style={{ color: '#c62828' }}>🔥 피버 모드</strong>가 발동하여 점수가 2배가 됩니다.<br />
+                    5. 콤보가 쌓이면 레벨이 상승하며 고난이도 문제가 출제됩니다.<br />
+                    6. 시험이 시작되면 <strong>중도에 멈출 수 없으며</strong>, 감독관에 대한 항의는 불가합니다.<br />
+                    7. 본 시험의 성적은 <strong>전국 랭킹</strong>에 즉시 반영됩니다.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
