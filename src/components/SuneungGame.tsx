@@ -8,6 +8,7 @@ interface PlayedQuestion {
     selectedAnswer: number;
     correct: boolean;
     timeMs: number;
+    level: number;
 }
 
 interface GameResult {
@@ -119,6 +120,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 selectedAnswer: selected,
                 correct: isCorrect,
                 timeMs,
+                level: currentLevel,
             };
             playedQuestionsRef.current.push(played);
 

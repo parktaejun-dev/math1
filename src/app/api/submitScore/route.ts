@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
         let verifiedCorrect = 0;
 
         for (let i = 0; i < questionCount; i++) {
-            const q = generateQuestion(seed, i);
             const played = playedQuestions[i];
+            // Accept the level the client used for this question (defaults to 1)
+            const level = played.level || 1;
+            const q = generateQuestion(seed, i, level);
 
             if (played.questionId !== q.id) {
                 return NextResponse.json(

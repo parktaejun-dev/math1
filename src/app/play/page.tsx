@@ -13,6 +13,7 @@ interface GameResult {
         selectedAnswer: number;
         correct: boolean;
         timeMs: number;
+        level: number;
     }[];
 }
 
