@@ -1,7 +1,7 @@
 /**
  * Leaderboard store — Vercel Blob with in-memory fallback
  */
-import { put, list } from '@vercel/blob';
+import { put } from '@vercel/blob';
 
 interface LeaderboardEntry {
     userId: string;
@@ -45,20 +45,24 @@ const BLOB_PATH = 'leaderboard.json';
 
 class BlobLeaderboard {
     private async getData(): Promise<Record<string, number>> {
+        const token = process.env.BLOB_READ_WRITE_TOKEN;
+        // Extract store URL from token or use known base
+        // The blob URL format: https://<store>.private.blob.vercel-storage.com/<path>
+        const storeId = token?.match(/^vercel_blob_rw_([^_]+)_/)?.[1];
+        if (!storeId) {
+            console.error('[Leaderboard] Cannot extract store ID from token');
+            return {};
+        }
+        const blobUrl = `https://${storeId.toLowerCase()}.private.blob.vercel-storage.com/${BLOB_PATH}`;
         try {
-            const { blobs } = await list({ prefix: BLOB_PATH });
-            const file = blobs.find(b => b.pathname === BLOB_PATH);
-            if (!file) {
+            const res = await fetch(blobUrl, {
+                cache: 'no-store',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.status === 404) {
                 console.log('[Leaderboard] No existing blob, starting fresh');
                 return {};
             }
-            // For private stores, fetch with Bearer token
-            const res = await fetch(file.url, {
-                cache: 'no-store',
-                headers: {
-                    Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
-                },
-            });
             if (!res.ok) {
                 console.error(`[Leaderboard] Blob read failed: ${res.status} ${res.statusText}`);
                 return {};
