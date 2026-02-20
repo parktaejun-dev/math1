@@ -32,36 +32,110 @@ function hashSeed(seed: string): number {
   return hash >>> 0;
 }
 
+// Detect if a number is a power of a given base
+function isPowerOf(n: number, base: number): boolean {
+  if (n <= 0 || base <= 1) return false;
+  while (n > 1) {
+    if (n % base !== 0) return false;
+    n /= base;
+  }
+  return n === 1;
+}
+
+// Detect the base of a number (2 or 3) if it's a perfect power, otherwise 0
+function detectBase(n: number): number {
+  if (isPowerOf(n, 2)) return 2;
+  if (isPowerOf(n, 3)) return 3;
+  return 0;
+}
+
 // Fixed choices array in ascending order (typical of CSAT)
-function generateCSATChoices(answer: number, rng: () => number): number[] {
+// Now type-aware: produces mathematically coherent distractors per question type.
+function generateCSATChoices(answer: number, rng: () => number, type: string = 'generic'): number[] {
   if (!Number.isFinite(answer) || !Number.isInteger(answer) || answer <= 0) {
     throw new Error('generateCSATChoices expects positive integer answer');
   }
 
-  // Generate a pool of attractive distractors (common calculation mistakes)
   const pool = new Set<number>();
 
-  // 1. Off-by-one or two errors (addition/subtraction mistakes)
-  if (answer > 1) pool.add(answer - 1);
-  pool.add(answer + 1);
-  if (answer > 2) pool.add(answer - 2);
-  pool.add(answer + 2);
+  if (type === 'exp') {
+    // ── Exponent problems: ALL choices must be powers of the same base ──
+    // e.g. answer=8 (2^3) → choices from {2,4,8,16,32,64,128,...}
+    const base = detectBase(answer);
+    if (base > 0) {
+      // Generate many powers of this base
+      const powers: number[] = [];
+      for (let e = 1; e <= 12; e++) {
+        const v = Math.pow(base, e);
+        if (v > 0 && v <= 10000) powers.push(v);
+      }
+      // Remove the answer, add remaining as distractors
+      powers.filter(v => v !== answer).forEach(v => pool.add(v));
+    }
+    // Also add "wrong exponent" neighbors: answer * base, answer / base
+    if (answer * 2 <= 5000) pool.add(answer * 2);
+    if (answer * 3 <= 5000) pool.add(answer * 3);
+    if (answer % 2 === 0 && answer / 2 > 0) pool.add(answer / 2);
+    if (answer % 3 === 0 && answer / 3 > 0) pool.add(answer / 3);
 
-  // 2. Multiplication/Division mistakes (e.g. adding instead of multiplying exponents)
-  if (answer % 2 === 0 && answer / 2 > 0) pool.add(answer / 2);
-  pool.add(answer * 2);
-  if (answer % 3 === 0 && answer / 3 > 0) pool.add(answer / 3);
-  pool.add(answer * 3);
+  } else if (type === 'log') {
+    // ── Log problems: answers are small integers (1~8). Use nearby integers. ──
+    for (let d = 1; d <= 8; d++) {
+      if (d !== answer) pool.add(d);
+    }
 
-  // 3. Squaring/Square root mistakes
-  const sq = Math.floor(Math.sqrt(answer));
-  if (sq * sq === answer && sq > 0) pool.add(sq);
-  if (answer <= 50) pool.add(answer * answer); // Prevent distractors from becoming absurdly large
+  } else if (type === 'int') {
+    // ── Integration problems: coefficient/sign mistakes produce proportional errors ──
+    // Typical mistakes: forgetting +1 in exponent, halving/doubling a term
+    const fracs = [2 / 3, 3 / 4, 4 / 3, 3 / 2, 1 / 2, 5 / 4];
+    fracs.forEach(f => {
+      const v = Math.round(answer * f);
+      if (v > 0 && v !== answer) pool.add(v);
+    });
+    // Also ±small proportional offsets
+    if (answer > 3) pool.add(answer - 3);
+    pool.add(answer + 3);
+    if (answer > 5) pool.add(answer - 5);
+    pool.add(answer + 5);
 
-  // Convert pool to array, filter out the answer itself & non-positives
-  let distractorArray = Array.from(pool).filter(d => d !== answer && d > 0);
+  } else if (type === 'diff') {
+    // ── Differentiation: sign/coefficient errors yield answers in the same magnitude ──
+    const offsets = [2, 4, 6, 8];
+    offsets.forEach(o => {
+      if (answer > o) pool.add(answer - o);
+      pool.add(answer + o);
+    });
+    // Forgetting to multiply by coefficient of x
+    if (answer % 2 === 0) pool.add(answer / 2);
+    if (answer % 3 === 0) pool.add(answer / 3);
+    pool.add(answer * 2);
 
-  // Shuffle distractor array to randomly pick 4 tricky distractors
+  } else if (type === 'seq') {
+    // ── Sequence/Sigma: wrong constant term or multiplier ──
+    // Common mistake: forget to multiply the constant by N, or use N±1
+    const offsets = [3, 5, 7, 10, 12, 15];
+    offsets.forEach(o => {
+      if (answer > o) pool.add(answer - o);
+      pool.add(answer + o);
+    });
+    if (answer > 6) pool.add(answer - 6);
+
+  } else {
+    // ── Generic fallback ──
+    if (answer > 1) pool.add(answer - 1);
+    pool.add(answer + 1);
+    if (answer > 2) pool.add(answer - 2);
+    pool.add(answer + 2);
+    if (answer % 2 === 0 && answer / 2 > 0) pool.add(answer / 2);
+    pool.add(answer * 2);
+  }
+
+  // Convert pool to array, filter out the answer itself & non-positive integers
+  let distractorArray = Array.from(pool).filter(d =>
+    d !== answer && d > 0 && Number.isInteger(d)
+  );
+
+  // Shuffle distractor array to randomly pick 4
   for (let i = distractorArray.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [distractorArray[i], distractorArray[j]] = [distractorArray[j], distractorArray[i]];
@@ -72,12 +146,12 @@ function generateCSATChoices(answer: number, rng: () => number): number[] {
     selectedDistractors.add(distractorArray[i]);
   }
 
-  // Fallback: If we still need more distractors (e.g. answer is 1 or 2, pool might be small)
+  // Fallback: add proportional offsets if pool was too small
   let offset = 1;
-  const step = answer < 10 ? 1 : answer < 50 ? 2 : 5;
+  const step = answer < 10 ? 1 : answer < 50 ? 3 : Math.max(5, Math.round(answer * 0.1));
   while (selectedDistractors.size < 4) {
-    let candidate1 = answer - offset * step;
-    let candidate2 = answer + offset * step;
+    const candidate1 = answer - offset * step;
+    const candidate2 = answer + offset * step;
 
     if (candidate1 > 0 && candidate1 !== answer && !selectedDistractors.has(candidate1)) {
       selectedDistractors.add(candidate1);
@@ -86,14 +160,11 @@ function generateCSATChoices(answer: number, rng: () => number): number[] {
       selectedDistractors.add(candidate2);
     }
     offset++;
+    if (offset > 20) break; // safety
   }
 
-  // Combine the actual answer and the 4 distractors
+  // Combine answer + 4 distractors, sort ascending (CSAT style)
   const finalChoices = [answer, ...Array.from(selectedDistractors)];
-
-  // CSAT options are always sorted in ascending order.
-  // Because we randomly picked from a pool of both smaller and larger distractors (and completely unrelated numbers),
-  // the position of `answer` after sorting will be effectively unpredictable.
   return finalChoices.sort((a, b) => a - b);
 }
 
@@ -341,7 +412,7 @@ export function generateQuestion(seed: string, index: number = 0, level: number 
   }
 
   // Generate sorted choices matching CSAT style
-  const allChoices = generateCSATChoices(partial.answer, rng);
+  const allChoices = generateCSATChoices(partial.answer, rng, partial.type);
 
   return {
     id: `${seed}-${index}`,

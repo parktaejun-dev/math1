@@ -31,73 +31,7 @@ const FEVER_MULTIPLIER = 2;
 // Client-side question generator (dynamic import to avoid SSR issues)
 let generateQuestionFn: ((seed: string, index: number, level?: number) => Question) | null = null;
 
-// Global AudioContext to prevent exceeding the browser limit of 6 instances
-let audioCtx: AudioContext | null = null;
-const getAudioContext = () => {
-    if (typeof window === 'undefined') return null;
-    if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioContextClass) {
-            audioCtx = new AudioContextClass();
-        }
-    }
-    return audioCtx;
-};
-
-const playSchoolBell = () => {
-    try {
-        const ctx = getAudioContext();
-        if (ctx) {
-            if (ctx.state === 'suspended') ctx.resume();
-            const seq = [
-                { f: 523.25, t: 0, d: 0.8 }, // C5
-                { f: 659.25, t: 1.0, d: 0.8 }, // E5
-                { f: 587.33, t: 2.0, d: 0.8 }, // D5
-                { f: 392.00, t: 3.0, d: 1.5 }, // G4
-                { f: 659.25, t: 4.5, d: 0.8 }, // E5
-                { f: 587.33, t: 5.5, d: 0.8 }, // D5
-                { f: 523.25, t: 6.5, d: 1.5 }, // C5
-            ];
-            seq.forEach(({ f, t, d }) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.value = f;
-                gain.gain.setValueAtTime(0, ctx.currentTime + t);
-                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + d);
-                osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + d);
-            });
-        }
-    } catch (e) { }
-};
-
-const playLevelUp = () => {
-    try {
-        const ctx = getAudioContext();
-        if (ctx) {
-            if (ctx.state === 'suspended') ctx.resume();
-            const freqs = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
-            freqs.forEach((f, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.value = f;
-                const t = ctx.currentTime + i * 0.1;
-                gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(0.2, t + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-                osc.start(t);
-                osc.stop(t + 0.3);
-            });
-        }
-    } catch (e) { }
-};
+import { playLevelUp, playCorrect, playWrong } from '@/lib/sound';
 
 export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -142,7 +76,6 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     useEffect(() => {
         if (!isReady) return;
         loadQuestion(0, 1);
-        playSchoolBell();
 
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
@@ -190,42 +123,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             playedQuestionsRef.current.push(played);
 
             // Play sound effect safely
-            try {
-                const ctx = getAudioContext();
-                if (ctx) {
-                    if (ctx.state === 'suspended') {
-                        ctx.resume();
-                    }
-
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-
-                    if (isCorrect) {
-                        // Pleasant chime (C5 -> G5)
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
-                        gain.gain.setValueAtTime(0, ctx.currentTime);
-                        gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                        osc.start(ctx.currentTime);
-                        osc.stop(ctx.currentTime + 0.3);
-                    } else {
-                        // Dull buzzer
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(150, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.25);
-                        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-                        osc.start(ctx.currentTime);
-                        osc.stop(ctx.currentTime + 0.25);
-                    }
-                }
-            } catch (e) {
-                console.error('Audio playback failed', e);
-            }
+            if (isCorrect) playCorrect();
+            else playWrong();
 
             let newLevel = currentLevel;
 

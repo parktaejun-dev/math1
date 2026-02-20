@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { playSchoolBell, isSoundEnabled, toggleSound } from '@/lib/sound';
 
 interface LeaderboardEntry {
   userId: string;
@@ -15,8 +16,19 @@ export default function HomePage() {
 
   const [school, setSchool] = useState('');
   const [name, setName] = useState('');
+  const [soundOn, setSoundOn] = useState(true);
+  const audioPlayed = useRef(false);
 
   useEffect(() => {
+    // Check initial sound pref
+    setSoundOn(isSoundEnabled());
+
+    // Attempt to play school bell on mount if not played yet in this session
+    if (!audioPlayed.current && isSoundEnabled()) {
+      audioPlayed.current = true;
+      // Some browsers block this unless interacted. We just call it.
+      setTimeout(() => playSchoolBell(), 500);
+    }
     fetch('/api/leaderboard')
       .then((r) => r.json())
       .then((data) => {
@@ -49,12 +61,27 @@ export default function HomePage() {
   return (
     <div className="font-sans text-ink flex flex-col items-center py-8 min-h-screen bg-[#e8e8e8] bg-[url(https://lh3.googleusercontent.com/aida-public/AB6AXuAJKyLrtvjl4ZoLlzPAtau-RoXWcpoih6W0vJa1ZzMVZjinzRRXaNprxUrjuKAKkHq84QUaO6-igY-ehkc24E0PcVQnNIhEARY9brsXLmE_9_3zcibC9HTglNw9TzPOTTtUeN-1TOa3Gdz1Oqga_w-Sjn6ehZimYwj1yXKsssnZ4iATX3WY_EoljGYEUSuMd6bypBM1nJeJk7Y3T-e9-WpP9Hqq4OeK9QsLoqb9PWIVsLUmI-xNdtj4ChLiemyPZoB_FEiQHCHo1Ks)]">
       <div className="bg-paper shadow-paper border border-[#d4d4d4] w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 mx-auto relative overflow-hidden">
-        <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8">
+        <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8 relative">
           <div className="text-sm font-serif">
             <span className="block text-gray-500">2027학년도 대학수학능력시험 대비</span>
             <span className="font-bold text-lg">수학 영역</span>
           </div>
-          <div className="text-right">
+
+          <button
+            onClick={() => {
+              const newState = toggleSound();
+              setSoundOn(newState);
+              if (newState) playSchoolBell();
+            }}
+            className="absolute -top-4 right-0 mt-4 sm:relative sm:top-0 sm:mt-0 px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm"
+            aria-label="Toggle Sound"
+          >
+            <span className="material-symbols-outlined text-[20px] text-gray-700">
+              {soundOn ? 'volume_up' : 'volume_off'}
+            </span>
+          </button>
+
+          <div className="text-right hidden sm:block">
             <div className="border border-black px-4 py-1 text-sm font-serif inline-block">
               제 2 교시
             </div>
