@@ -38,34 +38,29 @@ function generateCSATChoices(answer: number, rng: () => number): number[] {
     throw new Error('generateCSATChoices expects positive integer answer');
   }
 
-  const distractors = new Set<number>();
-  distractors.add(answer);
-
-  // CSAT answers are almost always positive integers for Q1-10.
-  // Distractors are usually contiguous or close numbers.
-
-  // Choose a step size based on answer size
   const step = answer < 10 ? 1 : answer < 50 ? (Math.floor(rng() * 2) + 1) * 2 : 5;
 
-  // Fill distractors around the answer
-  let offset = 1;
-  while (distractors.size < 5) {
-    // try adding below
-    if (answer - offset * step > 0 && Math.floor(rng() * 2) === 0) {
-      distractors.add(answer - offset * step);
+  // Calculate how many positions below the answer are valid (must be > 0)
+  let maxBelow = 0;
+  for (let i = 1; i <= 4; i++) {
+    if (answer - i * step > 0) {
+      maxBelow = i;
+    } else {
+      break;
     }
-    // try adding above
-    if (distractors.size < 5) {
-      distractors.add(answer + offset * step);
-    }
-    // try adding below unconditionally if we still need more
-    if (distractors.size < 5 && answer - offset * step > 0) {
-      distractors.add(answer - offset * step);
-    }
-    offset++;
   }
 
-  return Array.from(distractors).sort((a, b) => a - b);
+  // Randomly select the position of the correct answer (0 to 4)
+  // Constrained by the valid options below it to ensure positive integers.
+  const pos = Math.floor(rng() * (maxBelow + 1));
+
+  const choices = [];
+  for (let i = 0; i < 5; i++) {
+    choices.push(answer + (i - pos) * step);
+  }
+
+  // Double check uniqueness (should always be unique given steps > 0)
+  return Array.from(new Set(choices)).sort((a, b) => a - b);
 }
 
 // ─── Question Generators ───────────────────────────────────────────
@@ -228,14 +223,69 @@ function generateType3Question(rng: () => number): Omit<Question, 'id' | 'choice
 
 // ─── Main API ──────────────────────────────────────────────────────
 
-export type QType = 'exp' | 'diff' | 'seq';
+// [Type 4] Definite Integration (CSAT Polynomials)
+function generateType4Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  let a = 0, b = 0, ans = 0;
+  for (let attempts = 0; attempts < 50; attempts++) {
+    a = Math.floor(rng() * 3) + 1; // 1 to 3
+    b = Math.floor(rng() * 4) + 1; // 1 to 4
+    ans = a * a * a + b * a * a;
+    if (ans > 0) break;
+  }
+  return {
+    latex: `\\int_{0}^{${a}} (3x^2 + ${2 * b}x) \\,dx = ?`,
+    answer: ans,
+    type: 'int'
+  }
+}
 
-const generators = [generateType1Question, generateType2Question, generateType3Question];
+// [Type 5] Logarithm Properties
+function generateType5Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  let base = [2, 3][Math.floor(rng() * 2)];
+  let ans = Math.floor(rng() * 4) + 2; // 2 to 5
+  let p1 = Math.floor(rng() * (ans - 1)) + 1;
+  let p2 = ans - p1;
+  let b = Math.pow(base, p1);
+  let c = Math.pow(base, p2);
 
-export function generateQuestion(seed: string, index: number = 0): Question {
+  const isSub = Math.floor(rng() * 2) === 0;
+  if (isSub) {
+    const sumAns = p1;
+    const p2_new = Math.floor(rng() * 3) + 1;
+    const p1_new = sumAns + p2_new;
+    b = Math.pow(base, p1_new);
+    c = Math.pow(base, p2_new);
+    return {
+      latex: `\\log_{${base}} ${b} - \\log_{${base}} ${c} = ?`,
+      answer: sumAns,
+      type: 'log'
+    };
+  } else {
+    return {
+      latex: `\\log_{${base}} ${b} + \\log_{${base}} ${c} = ?`,
+      answer: ans,
+      type: 'log'
+    };
+  }
+}
+
+// ─── Main API ──────────────────────────────────────────────────────
+
+export type QType = 'exp' | 'diff' | 'seq' | 'int' | 'log';
+
+const generators = [generateType1Question, generateType2Question, generateType3Question, generateType4Question, generateType5Question];
+
+export function generateQuestion(seed: string, index: number = 0, level: number = 1): Question {
   // Create unique seed for each question index
   const combinedSeed = hashSeed(`${seed}-${index}`);
   const rng = mulberry32(combinedSeed);
+
+  // Limit generators based on level
+  let availableGenerators = [generators[0]];
+  if (level === 2) availableGenerators = [generators[0], generators[1]];
+  else if (level === 3) availableGenerators = [generators[1], generators[2], generators[3]];
+  else if (level === 4) availableGenerators = [generators[2], generators[3], generators[4]];
+  else if (level >= 5) availableGenerators = [generators[3], generators[4]];
 
   // Select question type
   let typeIndex = 0;
@@ -243,8 +293,8 @@ export function generateQuestion(seed: string, index: number = 0): Question {
 
   // Retry loop to ensure answer is an integer and positive.
   for (let attempts = 0; attempts < 50; attempts++) {
-    typeIndex = Math.floor(rng() * generators.length);
-    partial = generators[typeIndex](rng);
+    typeIndex = Math.floor(rng() * availableGenerators.length);
+    partial = availableGenerators[typeIndex](rng);
 
     if (Number.isInteger(partial.answer) && partial.answer > 0) {
       break;

@@ -44,6 +44,61 @@ const getAudioContext = () => {
     return audioCtx;
 };
 
+const playSchoolBell = () => {
+    try {
+        const ctx = getAudioContext();
+        if (ctx) {
+            if (ctx.state === 'suspended') ctx.resume();
+            const seq = [
+                { f: 523.25, t: 0, d: 0.8 }, // C5
+                { f: 659.25, t: 1.0, d: 0.8 }, // E5
+                { f: 587.33, t: 2.0, d: 0.8 }, // D5
+                { f: 392.00, t: 3.0, d: 1.5 }, // G4
+                { f: 659.25, t: 4.5, d: 0.8 }, // E5
+                { f: 587.33, t: 5.5, d: 0.8 }, // D5
+                { f: 523.25, t: 6.5, d: 1.5 }, // C5
+            ];
+            seq.forEach(({ f, t, d }) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                gain.gain.setValueAtTime(0, ctx.currentTime + t);
+                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + d);
+                osc.start(ctx.currentTime + t);
+                osc.stop(ctx.currentTime + t + d);
+            });
+        }
+    } catch (e) { }
+};
+
+const playLevelUp = () => {
+    try {
+        const ctx = getAudioContext();
+        if (ctx) {
+            if (ctx.state === 'suspended') ctx.resume();
+            const freqs = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+            freqs.forEach((f, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                const t = ctx.currentTime + i * 0.1;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.2, t + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                osc.start(t);
+                osc.stop(t + 0.3);
+            });
+        }
+    } catch (e) { }
+};
+
 export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -56,6 +111,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [correctCount, setCorrectCount] = useState(0);
     const [isGameOver, setIsGameOver] = useState(false);
     const [isReady, setIsReady] = useState(false);
+    const [currentLevel, setCurrentLevel] = useState(1);
+    const [showLevelUp, setShowLevelUp] = useState(false);
 
     const playedQuestionsRef = useRef<PlayedQuestion[]>([]);
     const questionStartTimeRef = useRef<number>(Date.now());
@@ -71,9 +128,9 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
 
     // Generate question
     const loadQuestion = useCallback(
-        (index: number) => {
+        (index: number, level: number = 1) => {
             if (!generateQuestionFn) return;
-            const q = generateQuestionFn(seed, index);
+            const q = generateQuestionFn(seed, index, level);
             setCurrentQuestion(q);
             questionStartTimeRef.current = Date.now();
             setFeedback(null);
@@ -84,7 +141,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     // Start game
     useEffect(() => {
         if (!isReady) return;
-        loadQuestion(0);
+        loadQuestion(0, 1);
+        playSchoolBell();
 
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
@@ -169,13 +227,24 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 console.error('Audio playback failed', e);
             }
 
+            let newLevel = currentLevel;
+
             if (isCorrect) {
                 const newCombo = combo + 1;
                 const newIsFever = newCombo >= COMBO_FEVER_THRESHOLD;
+                newLevel = Math.floor(newCombo / 10) + 1;
+
+                if (newLevel > currentLevel) {
+                    setCurrentLevel(newLevel);
+                    setShowLevelUp(true);
+                    setTimeout(() => setShowLevelUp(false), 2000);
+                    playLevelUp();
+                }
 
                 // Calculate time bonus (decaying survival timer)
-                // max(2, 12 * e^(-combo/12))
-                const timeBonus = Math.max(2, Math.round(12 * Math.exp(-newCombo / 12)));
+                // Insane mode (Level 5+) gets only 1 second!
+                let timeBonus = Math.max(2, Math.round(12 * Math.exp(-newCombo / 12)));
+                if (newLevel >= 5) timeBonus = 1;
                 setTimeLeft((prev) => Math.min(GAME_DURATION, prev + timeBonus));
 
                 // Calculate points: 100 + (combo * 5) + floor(timeLeft * 2)
@@ -193,6 +262,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             } else {
                 setCombo(0);
                 setIsFever(false);
+                setCurrentLevel(1); // Reset level on miss
                 setFeedback('wrong');
             }
 
@@ -200,10 +270,10 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             setTimeout(() => {
                 const nextIndex = currentIndex + 1;
                 setCurrentIndex(nextIndex);
-                loadQuestion(nextIndex);
+                loadQuestion(nextIndex, newLevel);
             }, 300); // Increased feedback duration slightly for visual effect
         },
-        [currentQuestion, feedback, isGameOver, combo, currentIndex, loadQuestion]
+        [currentQuestion, feedback, isGameOver, combo, currentLevel, currentIndex, loadQuestion]
     );
 
     // Render KaTeX safely
@@ -248,14 +318,24 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             </div>
 
             {/* Header */}
-            <header className="w-full bg-paper border-b border-black flex-shrink-0 px-4 py-2 flex items-center justify-between z-10 shadow-sm h-12">
+            <header className="w-full bg-paper border-b border-black flex-shrink-0 px-4 py-2 flex items-center justify-between z-10 shadow-sm h-12 relative overflow-hidden">
+                {/* Level Up Flash */}
+                {showLevelUp && (
+                    <div className="absolute inset-0 bg-blue-500/20 animate-pulse pointer-events-none" />
+                )}
+
                 <div className="flex items-center gap-2">
-                    <div className={`text-sm font-bold ${isFever ? 'text-amber-500 animate-pulse' : 'text-primary'}`}>
-                        {isFever ? '🔥 FEVER' : `${combo} COMBO`}
+                    <div className="flex flex-col">
+                        <div className={`text-xs font-bold leading-none ${currentLevel >= 5 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>
+                            {currentLevel >= 5 ? 'INSANE' : `LV.${currentLevel}`}
+                        </div>
+                        <div className={`text-sm font-bold ${isFever ? 'text-amber-500 animate-pulse' : 'text-primary'}`}>
+                            {isFever ? '🔥 FEVER' : `${combo} COMBO`}
+                        </div>
                     </div>
                     <Link href="/">
                         <h1 className="text-base font-bold text-slate-900 leading-none tracking-tight ml-2 cursor-pointer hover:opacity-80 transition-opacity">
-                            수학 영역
+                            수능 1번
                         </h1>
                     </Link>
                 </div>
