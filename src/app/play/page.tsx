@@ -31,6 +31,7 @@ export default function PlayPage() {
     const [session, setSession] = useState<SessionData | null>(null);
     const [result, setResult] = useState<GameResult | null>(null);
     const [rank, setRank] = useState<number | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
 
@@ -79,9 +80,15 @@ export default function PlayPage() {
                     }),
                 });
                 const data = await res.json();
-                if (data.rank) setRank(data.rank);
-            } catch {
-                console.error('Score submission failed');
+                if (res.ok && data.rank) {
+                    setRank(data.rank);
+                } else if (!res.ok) {
+                    console.error('[Score Submit] Server rejected:', res.status, data);
+                    setSubmitError(`점수 저장 실패: ${data.error || res.status}`);
+                }
+            } catch (e) {
+                console.error('[Score Submit] Network error:', e);
+                setSubmitError('점수 저장 중 네트워크 오류가 발생했습니다.');
             }
 
             setGameState('result');
@@ -180,6 +187,11 @@ export default function PlayPage() {
                                 <span>수험번호: {session?.userId?.split('#')[0] || '알수없음'}</span>
                                 {rank && <span className="text-primary font-bold">전국 상위 {rank}위</span>}
                             </div>
+                            {submitError && (
+                                <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+                                    ⚠️ {submitError}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex-1 px-4 sm:px-8 py-8 flex flex-col items-center relative">
