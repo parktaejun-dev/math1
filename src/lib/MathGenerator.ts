@@ -38,29 +38,63 @@ function generateCSATChoices(answer: number, rng: () => number): number[] {
     throw new Error('generateCSATChoices expects positive integer answer');
   }
 
-  const step = answer < 10 ? 1 : answer < 50 ? (Math.floor(rng() * 2) + 1) * 2 : 5;
+  // Generate a pool of attractive distractors (common calculation mistakes)
+  const pool = new Set<number>();
 
-  // Calculate how many positions below the answer are valid (must be > 0)
-  let maxBelow = 0;
-  for (let i = 1; i <= 4; i++) {
-    if (answer - i * step > 0) {
-      maxBelow = i;
-    } else {
-      break;
+  // 1. Off-by-one or two errors (addition/subtraction mistakes)
+  if (answer > 1) pool.add(answer - 1);
+  pool.add(answer + 1);
+  if (answer > 2) pool.add(answer - 2);
+  pool.add(answer + 2);
+
+  // 2. Multiplication/Division mistakes (e.g. adding instead of multiplying exponents)
+  if (answer % 2 === 0 && answer / 2 > 0) pool.add(answer / 2);
+  pool.add(answer * 2);
+  if (answer % 3 === 0 && answer / 3 > 0) pool.add(answer / 3);
+  pool.add(answer * 3);
+
+  // 3. Squaring/Square root mistakes
+  const sq = Math.floor(Math.sqrt(answer));
+  if (sq * sq === answer && sq > 0) pool.add(sq);
+  if (answer <= 50) pool.add(answer * answer); // Prevent distractors from becoming absurdly large
+
+  // Convert pool to array, filter out the answer itself & non-positives
+  let distractorArray = Array.from(pool).filter(d => d !== answer && d > 0);
+
+  // Shuffle distractor array to randomly pick 4 tricky distractors
+  for (let i = distractorArray.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [distractorArray[i], distractorArray[j]] = [distractorArray[j], distractorArray[i]];
+  }
+
+  const selectedDistractors = new Set<number>();
+  for (let i = 0; i < distractorArray.length && selectedDistractors.size < 4; i++) {
+    selectedDistractors.add(distractorArray[i]);
+  }
+
+  // Fallback: If we still need more distractors (e.g. answer is 1 or 2, pool might be small)
+  let offset = 1;
+  const step = answer < 10 ? 1 : answer < 50 ? 2 : 5;
+  while (selectedDistractors.size < 4) {
+    let candidate1 = answer - offset * step;
+    let candidate2 = answer + offset * step;
+
+    if (candidate1 > 0 && candidate1 !== answer && !selectedDistractors.has(candidate1)) {
+      selectedDistractors.add(candidate1);
     }
+    if (selectedDistractors.size < 4 && candidate2 !== answer && !selectedDistractors.has(candidate2)) {
+      selectedDistractors.add(candidate2);
+    }
+    offset++;
   }
 
-  // Randomly select the position of the correct answer (0 to 4)
-  // Constrained by the valid options below it to ensure positive integers.
-  const pos = Math.floor(rng() * (maxBelow + 1));
+  // Combine the actual answer and the 4 distractors
+  const finalChoices = [answer, ...Array.from(selectedDistractors)];
 
-  const choices = [];
-  for (let i = 0; i < 5; i++) {
-    choices.push(answer + (i - pos) * step);
-  }
-
-  // Double check uniqueness (should always be unique given steps > 0)
-  return Array.from(new Set(choices)).sort((a, b) => a - b);
+  // CSAT options are always sorted in ascending order.
+  // Because we randomly picked from a pool of both smaller and larger distractors (and completely unrelated numbers),
+  // the position of `answer` after sorting will be effectively unpredictable.
+  return finalChoices.sort((a, b) => a - b);
 }
 
 // ─── Question Generators ───────────────────────────────────────────

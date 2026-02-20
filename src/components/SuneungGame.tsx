@@ -29,7 +29,7 @@ const BASE_SCORE = 100;
 const FEVER_MULTIPLIER = 2;
 
 // Client-side question generator (dynamic import to avoid SSR issues)
-let generateQuestionFn: ((seed: string, index: number) => Question) | null = null;
+let generateQuestionFn: ((seed: string, index: number, level?: number) => Question) | null = null;
 
 // Global AudioContext to prevent exceeding the browser limit of 6 instances
 let audioCtx: AudioContext | null = null;
@@ -242,9 +242,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 }
 
                 // Calculate time bonus (decaying survival timer)
-                // Insane mode (Level 5+) gets only 1 second!
                 let timeBonus = Math.max(2, Math.round(12 * Math.exp(-newCombo / 12)));
-                if (newLevel >= 5) timeBonus = 1;
+                if (newLevel >= 5) timeBonus = 15;
                 setTimeLeft((prev) => Math.min(GAME_DURATION, prev + timeBonus));
 
                 // Calculate points: 100 + (combo * 5) + floor(timeLeft * 2)
