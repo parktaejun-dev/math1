@@ -162,6 +162,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             } else {
                 setCombo(0);
                 setIsFever(false);
+                // Penalty: deduct 5 seconds for wrong answer
+                setTimeLeft((prev) => Math.max(0, prev - 5));
                 // Level persists — no reset on miss
                 setFeedback('wrong');
             }
