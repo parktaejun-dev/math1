@@ -1,6 +1,7 @@
 /**
- * Leaderboard store — Redis with in-memory fallback
+ * Leaderboard store — Vercel Blob with in-memory fallback
  */
+import { put, list } from '@vercel/blob';
 
 interface LeaderboardEntry {
     userId: string;
@@ -38,69 +39,82 @@ class InMemoryLeaderboard {
     }
 }
 
-// ─── Redis-backed Leaderboard ──────────────────────────────────────
+// ─── Vercel Blob Leaderboard ───────────────────────────────────────
 
-class RedisLeaderboard {
-    private redis: import('ioredis').default;
-    private key = 'leaderboard:global';
+class BlobLeaderboard {
+    private async getData(): Promise<Record<string, number>> {
+        try {
+            const { blobs } = await list({ prefix: 'leaderboard.json' });
+            if (blobs.length > 0) {
+                // Vercel Blob list sorts by created chronologically, so we can just grab the exact match
+                const file = blobs.find(b => b.pathname === 'leaderboard.json');
+                if (file) {
+                    const res = await fetch(file.url, { cache: 'no-store' });
+                    return await res.json();
+                }
+            }
+        } catch (e) {
+            console.warn('[Leaderboard] Failed to read from Blob, returning empty', e);
+        }
+        return {};
+    }
 
-    constructor(redis: import('ioredis').default) {
-        this.redis = redis;
+    private async saveData(data: Record<string, number>) {
+        try {
+            await put('leaderboard.json', JSON.stringify(data), {
+                access: 'public',
+                addRandomSuffix: false
+            });
+        } catch (e) {
+            console.error('[Leaderboard] Failed to write to Blob', e);
+        }
     }
 
     async addScore(userId: string, score: number): Promise<void> {
-        // Only update if new score is higher (GT flag requires Redis 6.2+)
-        const current = await this.redis.zscore(this.key, userId);
-        if (current === null || score > parseFloat(current)) {
-            await this.redis.zadd(this.key, score, userId);
+        const data = await this.getData();
+        const existing = data[userId] || 0;
+        if (score > existing) {
+            data[userId] = score;
+            await this.saveData(data);
         }
     }
 
     async getTopScores(count: number): Promise<LeaderboardEntry[]> {
-        const results = await this.redis.zrevrange(this.key, 0, count - 1, 'WITHSCORES');
-        const entries: LeaderboardEntry[] = [];
-        for (let i = 0; i < results.length; i += 2) {
-            entries.push({
-                userId: results[i],
-                score: parseFloat(results[i + 1]),
-            });
-        }
-        return entries;
+        const data = await this.getData();
+        return Object.entries(data)
+            .map(([userId, score]) => ({ userId, score }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, count);
     }
 
     async getRank(userId: string): Promise<number | null> {
-        const rank = await this.redis.zrevrank(this.key, userId);
-        return rank !== null ? rank + 1 : null;
+        const data = await this.getData();
+        const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
+        const index = sorted.findIndex(([id]) => id === userId);
+        return index >= 0 ? index + 1 : null;
     }
 
     async getScore(userId: string): Promise<number | null> {
-        const score = await this.redis.zscore(this.key, userId);
-        return score !== null ? parseFloat(score) : null;
+        const data = await this.getData();
+        return data[userId] ?? null;
     }
 }
 
 // ─── Singleton Export ──────────────────────────────────────────────
 
-export type Leaderboard = InMemoryLeaderboard | RedisLeaderboard;
+export type Leaderboard = InMemoryLeaderboard | BlobLeaderboard;
 
 let leaderboard: Leaderboard | null = null;
 
 export async function getLeaderboard(): Promise<Leaderboard> {
     if (leaderboard) return leaderboard;
 
-    const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
-    if (redisUrl) {
-        try {
-            const Redis = (await import('ioredis')).default;
-            const redis = new Redis(redisUrl);
-            leaderboard = new RedisLeaderboard(redis);
-            console.log('[Leaderboard] Connected to Redis');
-        } catch (e) {
-            console.warn('[Leaderboard] Redis connection failed, using in-memory fallback', e);
-            leaderboard = new InMemoryLeaderboard();
-        }
+    // Use Blob if configured, else fallback to memory
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+        leaderboard = new BlobLeaderboard();
+        console.log('[Leaderboard] Connected to Vercel Blob');
     } else {
-        console.log('[Leaderboard] No REDIS_URL, using in-memory fallback');
+        console.log('[Leaderboard] No BLOB_READ_WRITE_TOKEN, using in-memory fallback');
         leaderboard = new InMemoryLeaderboard();
     }
 
