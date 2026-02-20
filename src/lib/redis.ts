@@ -1,4 +1,7 @@
-import { put, head } from '@vercel/blob';
+/**
+ * Leaderboard store — Vercel Blob with in-memory fallback
+ */
+import { put, list } from '@vercel/blob';
 
 interface LeaderboardEntry {
     userId: string;
@@ -43,35 +46,36 @@ const BLOB_PATH = 'leaderboard.json';
 class BlobLeaderboard {
     private async getData(): Promise<Record<string, number>> {
         try {
-            // head() checks if the blob exists and returns its metadata
-            const blob = await head(BLOB_PATH);
-            // Fetch with Bearer token for private store access
-            const res = await fetch(blob.url, {
+            const { blobs } = await list({ prefix: BLOB_PATH });
+            const file = blobs.find(b => b.pathname === BLOB_PATH);
+            if (!file) {
+                console.log('[Leaderboard] No existing blob, starting fresh');
+                return {};
+            }
+            // For private stores, fetch with Bearer token
+            const res = await fetch(file.url, {
                 cache: 'no-store',
                 headers: {
                     Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
                 },
             });
             if (!res.ok) {
-                console.error(`[Leaderboard] Blob fetch failed: ${res.status}`);
+                console.error(`[Leaderboard] Blob read failed: ${res.status} ${res.statusText}`);
                 return {};
             }
             return await res.json();
-        } catch (e: any) {
-            // blob_not_found means first time — return empty
-            if (e?.code === 'blob_not_found' || e?.message?.includes('not found')) {
-                return {};
-            }
+        } catch (e) {
             console.error('[Leaderboard] getData error:', e);
             return {};
         }
     }
 
     private async saveData(data: Record<string, number>) {
-        await put(BLOB_PATH, JSON.stringify(data), {
+        const result = await put(BLOB_PATH, JSON.stringify(data), {
             access: 'private',
             addRandomSuffix: false,
         });
+        console.log('[Leaderboard] Saved OK, url:', result.url);
     }
 
     async addScore(userId: string, score: number): Promise<void> {
@@ -113,12 +117,11 @@ let leaderboard: Leaderboard | null = null;
 export async function getLeaderboard(): Promise<Leaderboard> {
     if (leaderboard) return leaderboard;
 
-    // Use Blob if configured, else fallback to memory
     if (process.env.BLOB_READ_WRITE_TOKEN) {
         leaderboard = new BlobLeaderboard();
         console.log('[Leaderboard] Using Vercel Blob');
     } else {
-        console.log('[Leaderboard] WARN: No BLOB_READ_WRITE_TOKEN, using in-memory (data will NOT persist across requests)');
+        console.log('[Leaderboard] WARN: No BLOB_READ_WRITE_TOKEN, using in-memory');
         leaderboard = new InMemoryLeaderboard();
     }
 

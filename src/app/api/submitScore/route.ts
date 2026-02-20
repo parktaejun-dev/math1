@@ -98,9 +98,10 @@ export async function POST(request: NextRequest) {
             rank,
             message: `Score ${score} submitted successfully`,
         });
-    } catch {
+    } catch (e: any) {
+        console.error('[submitScore] Error:', e);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: `Internal server error: ${e?.message || 'unknown'}` },
             { status: 500 }
         );
     }

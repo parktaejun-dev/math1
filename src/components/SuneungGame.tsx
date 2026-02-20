@@ -51,6 +51,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
 
     const playedQuestionsRef = useRef<PlayedQuestion[]>([]);
     const questionStartTimeRef = useRef<number>(Date.now());
+    const processingRef = useRef(false); // Lock to prevent rapid-click exploits
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Load the generator
@@ -110,7 +111,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     // Handle answer selection
     const handleAnswer = useCallback(
         (selected: number) => {
-            if (!currentQuestion || feedback || isGameOver) return;
+            if (!currentQuestion || feedback || isGameOver || processingRef.current) return;
+            processingRef.current = true; // Lock immediately (synchronous)
 
             const timeMs = Date.now() - questionStartTimeRef.current;
             const isCorrect = selected === currentQuestion.answer;
@@ -170,6 +172,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
 
             // Move to next question after brief feedback
             setTimeout(() => {
+                processingRef.current = false; // Unlock for next question
                 const nextIndex = currentIndex + 1;
                 setCurrentIndex(nextIndex);
                 loadQuestion(nextIndex, newLevel);
