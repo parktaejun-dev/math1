@@ -246,12 +246,25 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 )}
 
                 <div className="flex items-center gap-2">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col items-start">
                         <div className={`text-xs font-bold leading-none ${currentLevel >= 5 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>
                             {currentLevel >= 5 ? 'INSANE' : `LV.${currentLevel}`}
                         </div>
-                        <div className={`text-sm font-bold ${isFever ? 'text-amber-500 animate-pulse' : 'text-primary'}`}>
-                            {isFever ? '🔥 FEVER' : `${combo} COMBO`}
+                        <div
+                            key={combo} /* Force re-mount for pop animation on every combo change */
+                            className={`text-sm font-bold transition-colors duration-200 ${isFever
+                                    ? 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]'
+                                    : combo >= 8 ? 'text-red-500'
+                                        : combo >= 5 ? 'text-orange-500'
+                                            : combo >= 3 ? 'text-amber-600'
+                                                : 'text-primary'
+                                }`}
+                            style={{
+                                animation: combo > 0 ? 'comboPop 0.25s ease-out' : 'none',
+                                fontSize: isFever ? '0.95rem' : undefined,
+                            }}
+                        >
+                            {isFever ? '🔥 FEVER' : combo > 0 ? `${combo} COMBO` : '0 COMBO'}
                         </div>
                     </div>
                     <Link href="/">
