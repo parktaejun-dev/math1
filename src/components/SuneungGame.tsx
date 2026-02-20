@@ -162,7 +162,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             } else {
                 setCombo(0);
                 setIsFever(false);
-                setCurrentLevel(1); // Reset level on miss
+                // Level persists — no reset on miss
                 setFeedback('wrong');
             }
 
