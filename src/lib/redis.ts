@@ -1,7 +1,4 @@
-/**
- * Leaderboard store — Vercel Blob with in-memory fallback
- */
-import { put, list } from '@vercel/blob';
+import { put, head } from '@vercel/blob';
 
 interface LeaderboardEntry {
     userId: string;
@@ -45,21 +42,29 @@ const BLOB_PATH = 'leaderboard.json';
 
 class BlobLeaderboard {
     private async getData(): Promise<Record<string, number>> {
-        const { blobs } = await list({ prefix: BLOB_PATH });
-        if (blobs.length > 0) {
-            const file = blobs.find(b => b.pathname === BLOB_PATH);
-            if (file) {
-                // Private stores require downloadUrl (includes auth token)
-                const fetchUrl = (file as any).downloadUrl || file.url;
-                const res = await fetch(fetchUrl, { cache: 'no-store' });
-                if (!res.ok) {
-                    throw new Error(`Blob fetch failed: ${res.status} ${res.statusText}`);
-                }
-                return await res.json();
+        try {
+            // head() checks if the blob exists and returns its metadata
+            const blob = await head(BLOB_PATH);
+            // Fetch with Bearer token for private store access
+            const res = await fetch(blob.url, {
+                cache: 'no-store',
+                headers: {
+                    Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+                },
+            });
+            if (!res.ok) {
+                console.error(`[Leaderboard] Blob fetch failed: ${res.status}`);
+                return {};
             }
+            return await res.json();
+        } catch (e: any) {
+            // blob_not_found means first time — return empty
+            if (e?.code === 'blob_not_found' || e?.message?.includes('not found')) {
+                return {};
+            }
+            console.error('[Leaderboard] getData error:', e);
+            return {};
         }
-        // No file yet — return empty (first-time init)
-        return {};
     }
 
     private async saveData(data: Record<string, number>) {
