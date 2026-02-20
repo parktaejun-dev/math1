@@ -88,7 +88,7 @@ let leaderboard: Leaderboard | null = null;
 export async function getLeaderboard(): Promise<Leaderboard> {
     if (leaderboard) return leaderboard;
 
-    const redisUrl = process.env.REDIS_URL;
+    const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
     if (redisUrl) {
         try {
             const Redis = (await import('ioredis')).default;
