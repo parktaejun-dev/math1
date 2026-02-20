@@ -41,33 +41,30 @@ class InMemoryLeaderboard {
 
 // ─── Vercel Blob Leaderboard ───────────────────────────────────────
 
+const BLOB_PATH = 'leaderboard.json';
+
 class BlobLeaderboard {
     private async getData(): Promise<Record<string, number>> {
-        try {
-            const { blobs } = await list({ prefix: 'leaderboard.json' });
-            if (blobs.length > 0) {
-                // Vercel Blob list sorts by created chronologically, so we can just grab the exact match
-                const file = blobs.find(b => b.pathname === 'leaderboard.json');
-                if (file) {
-                    const res = await fetch(file.url, { cache: 'no-store' });
-                    return await res.json();
+        const { blobs } = await list({ prefix: BLOB_PATH });
+        if (blobs.length > 0) {
+            const file = blobs.find(b => b.pathname === BLOB_PATH);
+            if (file) {
+                const res = await fetch(file.url, { cache: 'no-store' });
+                if (!res.ok) {
+                    throw new Error(`Blob fetch failed: ${res.status} ${res.statusText}`);
                 }
+                return await res.json();
             }
-        } catch (e) {
-            console.warn('[Leaderboard] Failed to read from Blob, returning empty', e);
         }
+        // No file yet — return empty (first-time init)
         return {};
     }
 
     private async saveData(data: Record<string, number>) {
-        try {
-            await put('leaderboard.json', JSON.stringify(data), {
-                access: 'public',
-                addRandomSuffix: false
-            });
-        } catch (e) {
-            console.error('[Leaderboard] Failed to write to Blob', e);
-        }
+        await put(BLOB_PATH, JSON.stringify(data), {
+            access: 'private',
+            addRandomSuffix: false,
+        });
     }
 
     async addScore(userId: string, score: number): Promise<void> {
@@ -112,9 +109,9 @@ export async function getLeaderboard(): Promise<Leaderboard> {
     // Use Blob if configured, else fallback to memory
     if (process.env.BLOB_READ_WRITE_TOKEN) {
         leaderboard = new BlobLeaderboard();
-        console.log('[Leaderboard] Connected to Vercel Blob');
+        console.log('[Leaderboard] Using Vercel Blob');
     } else {
-        console.log('[Leaderboard] No BLOB_READ_WRITE_TOKEN, using in-memory fallback');
+        console.log('[Leaderboard] WARN: No BLOB_READ_WRITE_TOKEN, using in-memory (data will NOT persist across requests)');
         leaderboard = new InMemoryLeaderboard();
     }
 
