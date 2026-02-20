@@ -32,7 +32,7 @@ const FEVER_MULTIPLIER = 2;
 // Client-side question generator (dynamic import to avoid SSR issues)
 let generateQuestionFn: ((seed: string, index: number, level?: number) => Question) | null = null;
 
-import { playLevelUp, playCorrect, playWrong } from '@/lib/sound';
+import { playLevelUp, playCorrect, playWrong, playTick, playTimeGain, playTimeLoss } from '@/lib/sound';
 
 export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -48,6 +48,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [isReady, setIsReady] = useState(false);
     const [currentLevel, setCurrentLevel] = useState(1);
     const [showLevelUp, setShowLevelUp] = useState(false);
+    const [timeDelta, setTimeDelta] = useState<{ value: number; key: number } | null>(null);
 
     const playedQuestionsRef = useRef<PlayedQuestion[]>([]);
     const questionStartTimeRef = useRef<number>(Date.now());
@@ -85,6 +86,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     clearInterval(timerRef.current!);
                     return 0;
                 }
+                // Tick sound every second (louder when urgent)
+                if (prev <= 11) playTick();
                 return prev - 1;
             });
         }, 1000);
@@ -148,6 +151,10 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 let timeBonus = Math.max(2, Math.round(12 * Math.exp(-newCombo / 12)));
                 if (newLevel >= 5) timeBonus = 15;
                 setTimeLeft((prev) => Math.min(GAME_DURATION, prev + timeBonus));
+                // Time gain animation + sound
+                playTimeGain();
+                setTimeDelta({ value: timeBonus, key: Date.now() });
+                setTimeout(() => setTimeDelta(null), 800);
 
                 // Calculate points: 100 + (combo * 5) + floor(timeLeft * 2)
                 const basePoints = 100 + (newCombo * 5) + Math.floor(timeLeft * 2);
@@ -166,6 +173,10 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 setIsFever(false);
                 // Penalty: deduct 5 seconds for wrong answer
                 setTimeLeft((prev) => Math.max(0, prev - 5));
+                // Time loss animation + sound
+                playTimeLoss();
+                setTimeDelta({ value: -5, key: Date.now() });
+                setTimeout(() => setTimeDelta(null), 800);
                 // Level persists — no reset on miss
                 setFeedback('wrong');
             }
@@ -244,9 +255,19 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                         </h1>
                     </Link>
                 </div>
-                <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-300">
+                <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-300 relative">
                     <span className={`material-symbols-outlined text-[16px] ${isUrgent ? 'text-grading-red' : 'text-primary'}`}>timer</span>
-                    <span className={`font-bold font-mono text-sm leading-none ${isUrgent ? 'text-grading-red' : 'text-primary'}`}>{timeLeft}초</span>
+                    <span className={`font-bold font-mono text-sm leading-none ${isUrgent ? 'text-grading-red animate-pulse' : 'text-primary'}`}>{timeLeft}초</span>
+                    {/* Floating time delta animation */}
+                    {timeDelta && (
+                        <span
+                            key={timeDelta.key}
+                            className={`absolute -top-6 right-0 font-bold text-sm pointer-events-none ${timeDelta.value > 0 ? 'text-green-600' : 'text-red-600'}`}
+                            style={{ animation: 'floatUp 0.8s ease-out forwards' }}
+                        >
+                            {timeDelta.value > 0 ? `+${timeDelta.value}초` : `${timeDelta.value}초`}
+                        </span>
+                    )}
                 </div>
             </header>
 
