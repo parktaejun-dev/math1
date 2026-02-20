@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import katex from 'katex';
 import { Question } from '@/lib/MathGenerator';
 
@@ -29,6 +30,19 @@ const FEVER_MULTIPLIER = 2;
 
 // Client-side question generator (dynamic import to avoid SSR issues)
 let generateQuestionFn: ((seed: string, index: number) => Question) | null = null;
+
+// Global AudioContext to prevent exceeding the browser limit of 6 instances
+let audioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+    if (typeof window === 'undefined') return null;
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+        }
+    }
+    return audioCtx;
+};
 
 export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -117,36 +131,42 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             };
             playedQuestionsRef.current.push(played);
 
-            // Play sound effect
+            // Play sound effect safely
             try {
-                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-                if (AudioContext) {
-                    const ctx = new AudioContext();
+                const ctx = getAudioContext();
+                if (ctx) {
+                    if (ctx.state === 'suspended') {
+                        ctx.resume();
+                    }
+
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.connect(gain);
                     gain.connect(ctx.destination);
 
                     if (isCorrect) {
+                        // Pleasant chime (C5 -> G5)
                         osc.type = 'sine';
-                        osc.frequency.setValueAtTime(880, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
-                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.1);
+                        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.3);
                     } else {
-                        osc.type = 'sawtooth';
+                        // Dull buzzer
+                        osc.type = 'triangle';
                         osc.frequency.setValueAtTime(150, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.2);
+                        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.25);
+                        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.25);
                     }
                 }
             } catch (e) {
-                // Ignore audio errors
+                console.error('Audio playback failed', e);
             }
 
             if (isCorrect) {
@@ -233,7 +253,11 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     <div className={`text-sm font-bold ${isFever ? 'text-amber-500 animate-pulse' : 'text-primary'}`}>
                         {isFever ? '🔥 FEVER' : `${combo} COMBO`}
                     </div>
-                    <h1 className="text-base font-bold text-slate-900 leading-none tracking-tight ml-2">수학 영역</h1>
+                    <Link href="/">
+                        <h1 className="text-base font-bold text-slate-900 leading-none tracking-tight ml-2 cursor-pointer hover:opacity-80 transition-opacity">
+                            수학 영역
+                        </h1>
+                    </Link>
                 </div>
                 <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-300">
                     <span className={`material-symbols-outlined text-[16px] ${isUrgent ? 'text-grading-red' : 'text-primary'}`}>timer</span>
