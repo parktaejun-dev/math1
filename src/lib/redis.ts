@@ -49,7 +49,9 @@ class BlobLeaderboard {
         if (blobs.length > 0) {
             const file = blobs.find(b => b.pathname === BLOB_PATH);
             if (file) {
-                const res = await fetch(file.url, { cache: 'no-store' });
+                // Private stores require downloadUrl (includes auth token)
+                const fetchUrl = (file as any).downloadUrl || file.url;
+                const res = await fetch(fetchUrl, { cache: 'no-store' });
                 if (!res.ok) {
                     throw new Error(`Blob fetch failed: ${res.status} ${res.statusText}`);
                 }
