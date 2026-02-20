@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Game Result Grading Screen - Suneung No.1</title>
+<!-- Google Fonts: Noto Serif for formal text, Nanum Pen Script for handwriting effect -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700;900&amp;family=Nanum+Pen+Script&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f49bd",
+                        "grading-red": "#D93025",
+                        "paper-bg": "#F9F7F1",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Noto Serif", "serif"],
+                        "handwriting": ["Nanum Pen Script", "cursive"],
+                    },
+                    backgroundImage: {
+                        'paper-texture': "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E\")",
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Keyframes for the circle drawing animation */
+        @keyframes drawCircle {
+            0% {
+                stroke-dasharray: 1000;
+                stroke-dashoffset: 1000;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                stroke-dasharray: 1000;
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+        }
+        
+        .animate-draw {
+            animation: drawCircle 1.2s ease-out forwards;
+        }
+
+        /* Handwritten text fade in */
+        @keyframes inkFadeIn {
+            0% { opacity: 0; transform: scale(0.95) rotate(-2deg); }
+            100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+        }
+        
+        .ink-effect {
+            animation: inkFadeIn 0.8s ease-out 0.5s forwards;
+            opacity: 0; /* start invisible */
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display antialiased overflow-x-hidden selection:bg-primary/20 selection:text-primary">
+<!-- Top Navigation (Compact) -->
+<header class="w-full bg-white border-b border-[#e0e2e5] px-6 py-3 flex items-center justify-between shadow-sm z-10 print:hidden">
+<div class="flex items-center gap-3 text-[#111318]">
+<span class="material-symbols-outlined text-primary text-2xl">school</span>
+<h2 class="text-[#111318] text-lg font-bold tracking-tight">Suneung No.1</h2>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-sm text-slate-500 hidden sm:block">2024 College Scholastic Ability Test</span>
+<button class="flex items-center justify-center rounded bg-slate-100 text-slate-900 px-3 py-1.5 hover:bg-slate-200 transition-colors">
+<span class="material-symbols-outlined text-[20px]">menu</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow flex items-center justify-center p-4 sm:p-8 bg-background-light dark:bg-background-dark">
+<!-- The Exam Paper Sheet -->
+<div class="relative w-full max-w-[800px] min-h-[800px] bg-paper-bg shadow-2xl flex flex-col overflow-hidden before:absolute before:inset-0 before:bg-paper-texture before:pointer-events-none">
+<!-- Paper Header Strip -->
+<div class="border-b-2 border-slate-800 p-8 pb-4 mx-8 mt-8 flex flex-col gap-2">
+<div class="flex justify-between items-end">
+<h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Mathematics Domain</h1>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-600">Problem Booklet Type</p>
+<div class="border border-slate-800 rounded-full px-4 py-1 mt-1 inline-block bg-white/50">
+<span class="font-bold text-lg">Odd Type</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between text-sm font-medium text-slate-500 mt-4">
+<span>Candidate Number: 12345678</span>
+<span>Name: Kim Student</span>
+</div>
+</div>
+<!-- Content Body -->
+<div class="flex-1 px-8 py-12 flex flex-col items-center relative">
+<!-- Result Section -->
+<div class="w-full max-w-lg relative z-0 mt-8">
+<!-- Formal Label -->
+<div class="text-center mb-2">
+<h3 class="text-xl font-bold text-slate-800 border-b border-slate-300 inline-block px-8 pb-1">FINAL SCORE REPORT</h3>
+</div>
+<!-- Grading Visuals Container -->
+<div class="relative w-full aspect-square max-w-[400px] mx-auto flex items-center justify-center">
+<!-- SVG Red Circle (The Grade) -->
+<div class="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+<svg class="w-full h-full text-grading-red opacity-90 rotate-[-5deg]" viewbox="0 0 200 200">
+<!-- Rough Circle Path -->
+<path class="animate-draw" d="M 40 100 C 40 40, 160 40, 160 100 C 160 160, 40 160, 40 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" style="filter: drop-shadow(2px 4px 6px rgba(217, 48, 37, 0.3));"></path>
+<!-- Extra stroke for messy pen feel -->
+<path class="animate-draw" d="M 35 105 C 30 150, 150 170, 165 95" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4" style="animation-delay: 0.8s; opacity: 0;"></path>
+</svg>
+</div>
+<!-- The Score (Handwritten Style) -->
+<div class="relative z-20 flex flex-col items-center justify-center ink-effect">
+<div class="text-[120px] sm:text-[150px] leading-none font-handwriting text-grading-red drop-shadow-sm -rotate-2">
+                                100
+                            </div>
+<div class="text-4xl font-handwriting text-grading-red mt-[-10px] -rotate-2 opacity-80">
+                                Excellent!
+                            </div>
+</div>
+</div>
+<!-- Details Table -->
+<div class="mt-8 border-t-2 border-slate-800 pt-8 grid grid-cols-2 gap-8 text-center">
+<div class="flex flex-col gap-2">
+<span class="text-slate-500 font-serif text-sm uppercase tracking-widest">Time Taken</span>
+<span class="font-handwriting text-4xl text-grading-red -rotate-1 ink-effect" style="animation-delay: 1s;">12:45</span>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-slate-500 font-serif text-sm uppercase tracking-widest">Accuracy</span>
+<span class="font-handwriting text-4xl text-grading-red -rotate-1 ink-effect" style="animation-delay: 1.2s;">100%</span>
+</div>
+</div>
+<!-- Feedback Note -->
+<div class="mt-10 bg-yellow-50/50 border border-slate-200 p-6 rounded relative">
+<div class="absolute -top-3 left-4 bg-paper-bg px-2 text-sm text-slate-500 font-bold">Teacher's Note</div>
+<p class="font-handwriting text-2xl text-slate-700 leading-relaxed -rotate-1">
+                            "Perfect score! Your calculation speed has improved significantly since the last mock test. Keep up the good work for the finals!"
+                        </p>
+</div>
+</div>
+</div>
+<!-- Footer Action Area -->
+<div class="mt-auto p-8 border-t border-slate-200 bg-white/40 backdrop-blur-sm flex flex-col sm:flex-row gap-4 justify-center items-center">
+<button class="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-white border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden">
+<div class="absolute inset-0 bg-slate-100 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+<span class="relative z-10 flex items-center gap-2 font-bold text-slate-900 font-display">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+                        Retry (다시 하기)
+                    </span>
+</button>
+<button class="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-slate-900 border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden">
+<div class="absolute inset-0 bg-slate-800 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+<span class="relative z-10 flex items-center gap-2 font-bold text-white font-display">
+<span class="material-symbols-outlined text-[20px]">home</span>
+                        Main Menu (메인으로)
+                    </span>
+</button>
+</div>
+<!-- Decorative Elements (Fold lines, etc) -->
+<div class="absolute top-0 bottom-0 left-8 border-l border-dashed border-slate-300 pointer-events-none hidden md:block opacity-50"></div>
+</div>
+</main>
+</body></html>

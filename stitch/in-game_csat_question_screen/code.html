@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Suneung No.1 - Math Exam Mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f49bd",
+                        "background-light": "#f6f6f8", 
+                        "background-dark": "#101622",
+                        "paper": "#fffdf7", 
+                    },
+                    fontFamily: {
+                        "display": ["'Noto Serif KR'", "serif"],
+                        "sans": ["'Noto Serif KR'", "serif"] 
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .exam-radio:checked + div {
+            color: #0f49bd;
+            font-weight: 700;
+            background-color: rgba(15, 73, 189, 0.05);
+            border-color: #0f49bd;
+        }
+        .exam-radio:checked + div .option-circle {
+            border-color: #0f49bd;
+            border-width: 2px;
+            background-color: #fff;
+            color: #0f49bd;
+        }
+    </style>
+</head>
+<body class="bg-[#fffdf7] dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-screen flex flex-col overflow-hidden">
+<div class="w-full h-1 bg-slate-200 dark:bg-slate-800 flex-shrink-0">
+<div class="h-full bg-primary transition-all duration-1000 ease-linear" style="width: 75%"></div>
+</div>
+<header class="w-full bg-[#fffdf7] dark:bg-[#1a202c] border-b border-black dark:border-slate-700 flex-shrink-0 px-4 py-2 flex items-center justify-between z-10 shadow-sm h-12">
+<div class="flex items-center gap-2">
+<button class="p-1 rounded-full text-slate-800 dark:text-slate-300">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<h1 class="text-base font-bold text-slate-900 dark:text-white leading-none tracking-tight">수학 영역</h1>
+</div>
+<div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-600">
+<span class="material-symbols-outlined text-primary text-[16px]">timer</span>
+<span class="font-bold text-primary font-mono text-sm leading-none">03:45</span>
+</div>
+</header>
+<main class="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-20">
+<div class="flex flex-col gap-2 mb-4">
+<div class="flex gap-2 items-start">
+<div class="text-xl font-black text-primary leading-none mt-0.5">1.</div>
+<div class="flex-1">
+<p class="text-base font-bold leading-relaxed text-slate-900 dark:text-slate-100">
+                        지수함수 <span class="font-serif italic">f(x)</span> = <span class="font-serif italic">2<sup>x-1</sup></span> + 3 에 대하여 <span class="font-serif italic">f(3)</span>의 값은? 
+                        <span class="inline-block text-[10px] font-normal align-middle border border-black dark:border-slate-500 rounded-full px-1.5 py-0.5 ml-1 text-slate-600 dark:text-slate-400 leading-none">2점</span>
+</p>
+</div>
+</div>
+<div class="w-full max-w-[240px] mx-auto mt-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 flex items-center justify-center aspect-[4/3]">
+<div class="relative w-full h-full flex items-center justify-center overflow-hidden">
+<img alt="Graph showing an exponential function curve" class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal opacity-90" data-alt="Graph of exponential function f(x) = 2^(x-1) + 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbYKj5L_kTG4mtsenz7XsnJdICs64bVt5vX5SOXjL7SMPDqKki1ZC0b-Ojp-ByEzQA-M3t_H7eF75eF2ZCVF8GWKDiv5PPv-g122-FGBhqV6szcCttK8db2vOeYyBwckU8k8ya2xsQKgraH1_7RA4BLeKpG_MPpkm6KxQVMQzfJ17JQDYqUVn9RfI4sDA17YCi4lemHR5gkN_Z-BIy7PsXSrVjYDCa7eRmZPzP33xa1j1iNmEE3BiwsPcVdXtBUg4K16w-XQ-silA"/>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-2">
+<div class="grid grid-cols-1 gap-2 w-full">
+<label class="cursor-pointer group select-none w-full">
+<input class="exam-radio sr-only" name="q1" type="radio"/>
+<div class="flex items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-[0.99]">
+<span class="option-circle w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs font-serif mr-3 text-slate-500 dark:text-slate-400">①</span>
+<span class="text-base font-serif font-medium text-slate-800 dark:text-slate-200">5</span>
+</div>
+</label>
+<label class="cursor-pointer group select-none w-full">
+<input class="exam-radio sr-only" name="q1" type="radio"/>
+<div class="flex items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-[0.99]">
+<span class="option-circle w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs font-serif mr-3 text-slate-500 dark:text-slate-400">②</span>
+<span class="text-base font-serif font-medium text-slate-800 dark:text-slate-200">6</span>
+</div>
+</label>
+<label class="cursor-pointer group select-none w-full">
+<input class="exam-radio sr-only" name="q1" type="radio"/>
+<div class="flex items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-[0.99]">
+<span class="option-circle w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs font-serif mr-3 text-slate-500 dark:text-slate-400">③</span>
+<span class="text-base font-serif font-medium text-slate-800 dark:text-slate-200">7</span>
+</div>
+</label>
+<label class="cursor-pointer group select-none w-full">
+<input class="exam-radio sr-only" name="q1" type="radio"/>
+<div class="flex items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-[0.99]">
+<span class="option-circle w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs font-serif mr-3 text-slate-500 dark:text-slate-400">④</span>
+<span class="text-base font-serif font-medium text-slate-800 dark:text-slate-200">8</span>
+</div>
+</label>
+<label class="cursor-pointer group select-none w-full">
+<input class="exam-radio sr-only" name="q1" type="radio"/>
+<div class="flex items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-[0.99]">
+<span class="option-circle w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs font-serif mr-3 text-slate-500 dark:text-slate-400">⑤</span>
+<span class="text-base font-serif font-medium text-slate-800 dark:text-slate-200">9</span>
+</div>
+</label>
+</div>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 bg-[#fffdf7] dark:bg-[#1a202c] border-t border-slate-200 dark:border-slate-800 p-3 z-50 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<button class="w-12 h-12 rounded-full flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" disabled="">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</button>
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-slate-400 tracking-widest uppercase">Question</span>
+<span class="text-sm font-black text-slate-800 dark:text-slate-200">1 <span class="text-slate-400 font-normal">/ 12</span></span>
+</div>
+<button class="w-12 h-12 rounded-full flex items-center justify-center text-white bg-primary shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-colors">
+<span class="material-symbols-outlined">arrow_forward_ios</span>
+</button>
+</div>
+
+</body></html>
