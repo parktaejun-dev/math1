@@ -134,7 +134,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <input
                   type="text"
-                  placeholder="성명 (실명)"
+                  placeholder="이름"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={5}
@@ -142,7 +142,7 @@ export default function HomePage() {
                 />
                 <input
                   type="text"
-                  placeholder="소속 (선택)"
+                  placeholder="소속"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
                   maxLength={10}
