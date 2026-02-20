@@ -85,14 +85,14 @@ export default function HomePage() {
           <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6">
             <div className="w-full bg-white border border-slate-300 p-6 rounded-lg shadow-sm flex flex-col items-center gap-4">
               <div className="font-serif font-bold text-lg text-slate-800 border-b-2 border-slate-800 pb-1 w-full text-center tracking-widest">수험생 정보 입력</div>
-              <div className="flex gap-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <input
                   type="text"
                   placeholder="성명 (실명)"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={5}
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal"
+                  className="w-full sm:flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal text-base"
                 />
                 <input
                   type="text"
@@ -100,7 +100,7 @@ export default function HomePage() {
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
                   maxLength={10}
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal"
+                  className="w-full sm:flex-1 px-4 py-3 border border-slate-300 rounded font-sans text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 placeholder:font-normal text-base"
                 />
               </div>
             </div>
