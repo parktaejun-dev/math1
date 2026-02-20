@@ -74,6 +74,7 @@ class BlobLeaderboard {
         const result = await put(BLOB_PATH, JSON.stringify(data), {
             access: 'private',
             addRandomSuffix: false,
+            allowOverwrite: true,
         });
         console.log('[Leaderboard] Saved OK, url:', result.url);
     }
