@@ -382,7 +382,13 @@ export function generateQuestion(seed: string, index: number = 0, level: number 
       'sigma_basic': 8,
       'extrema': 9
     };
-    availableGenerators = allowedTypes.map(t => generators[typeToIndexMap[t]]);
+    availableGenerators = allowedTypes
+      .map(t => generators[typeToIndexMap[t]])
+      .filter(Boolean); // Guard against any invalid type names
+    if (availableGenerators.length === 0) {
+      // Fallback to level-1 defaults if all types were invalid
+      availableGenerators = [generators[0], generators[4], generators[5], generators[6]];
+    }
   } else {
     if (level === 1) {
       // Level 1: exp, log, trig_basic, limit_basic
