@@ -67,7 +67,7 @@ export default function QuestionBoard({
         }
     };
 
-    // Render KaTeX safely
+    // Render KaTeX safely (for pure math strings)
     const renderLatex = (latex: string) => {
         try {
             return {
@@ -79,6 +79,42 @@ export default function QuestionBoard({
         } catch {
             return { __html: latex };
         }
+    };
+
+    // Render text mixed with inline/block LaTeX formulas
+    const renderMixedText = (text: string) => {
+        if (!text) return { __html: '' };
+
+        const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
+        let html = '';
+
+        parts.forEach((part) => {
+            if (part.startsWith('$$') && part.endsWith('$$')) {
+                const math = part.slice(2, -2);
+                try {
+                    html += katex.renderToString(math, { displayMode: true, throwOnError: false });
+                } catch {
+                    html += part;
+                }
+            } else if (part.startsWith('$') && part.endsWith('$')) {
+                const math = part.slice(1, -1);
+                try {
+                    html += katex.renderToString(math, { displayMode: false, throwOnError: false });
+                } catch {
+                    html += part;
+                }
+            } else {
+                const escaped = part
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                html += `<span>${escaped}</span>`;
+            }
+        });
+
+        return { __html: html };
     };
 
     return (
@@ -108,7 +144,7 @@ export default function QuestionBoard({
                     >
                         <span className="font-serif font-bold text-sm text-slate-700 tracking-wide flex items-center gap-2">
                             <span className="material-symbols-outlined text-[18px] text-amber-500">{aiMode ? "smart_toy" : "lightbulb"}</span>
-                            {aiMode ? "AI 정답 해설 보기" : "아재들을 위한 꿀팁"}
+                            {aiMode ? "AI 정답 해설 보기" : "Hint"}
                         </span>
                         <span className={`text-slate-400 text-xs transition-transform duration-300 ${isHintOpen ? 'rotate-180' : ''}`}>▼</span>
                     </button>
@@ -125,13 +161,13 @@ export default function QuestionBoard({
                                 ) : (
                                     <div
                                         className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800"
-                                        dangerouslySetInnerHTML={renderLatex(aiExplanation || '')}
+                                        dangerouslySetInnerHTML={renderMixedText(aiExplanation || '')}
                                     />
                                 )
                             ) : (
                                 <div
-                                    className="text-sm text-slate-700 leading-relaxed font-sans [&_.katex]:!text-slate-800"
-                                    dangerouslySetInnerHTML={renderLatex(currentQuestion.hint || '이 문제에 대한 팁이 없습니다.')}
+                                    className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800"
+                                    dangerouslySetInnerHTML={renderMixedText(currentQuestion.hint || '이 문제에 대한 팁이 없습니다.')}
                                 />
                             )}
                         </div>
