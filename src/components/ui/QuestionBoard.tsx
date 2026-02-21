@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import katex from 'katex';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Question } from '@/lib/MathGenerator';
 
 interface QuestionBoardProps {
@@ -67,7 +70,7 @@ export default function QuestionBoard({
         }
     };
 
-    // Render KaTeX safely (for pure math strings)
+    // Render KaTeX safely (for pure math strings in the question itself)
     const renderLatex = (latex: string) => {
         try {
             return {
@@ -79,42 +82,6 @@ export default function QuestionBoard({
         } catch {
             return { __html: latex };
         }
-    };
-
-    // Render text mixed with inline/block LaTeX formulas
-    const renderMixedText = (text: string) => {
-        if (!text) return { __html: '' };
-
-        const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
-        let html = '';
-
-        parts.forEach((part) => {
-            if (part.startsWith('$$') && part.endsWith('$$')) {
-                const math = part.slice(2, -2);
-                try {
-                    html += katex.renderToString(math, { displayMode: true, throwOnError: false });
-                } catch {
-                    html += part;
-                }
-            } else if (part.startsWith('$') && part.endsWith('$')) {
-                const math = part.slice(1, -1);
-                try {
-                    html += katex.renderToString(math, { displayMode: false, throwOnError: false });
-                } catch {
-                    html += part;
-                }
-            } else {
-                const escaped = part
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-                html += `<span>${escaped}</span>`;
-            }
-        });
-
-        return { __html: html };
     };
 
     return (
@@ -159,16 +126,24 @@ export default function QuestionBoard({
                                         <span className="text-sm font-medium">AI 선생님이 해설을 작성중입니다...</span>
                                     </div>
                                 ) : (
-                                    <div
-                                        className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800"
-                                        dangerouslySetInnerHTML={renderMixedText(aiExplanation || '')}
-                                    />
+                                    <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkMath]}
+                                            rehypePlugins={[rehypeKatex]}
+                                        >
+                                            {aiExplanation || ''}
+                                        </ReactMarkdown>
+                                    </div>
                                 )
                             ) : (
-                                <div
-                                    className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800"
-                                    dangerouslySetInnerHTML={renderMixedText(currentQuestion.hint || '이 문제에 대한 팁이 없습니다.')}
-                                />
+                                <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                    >
+                                        {currentQuestion.hint || '이 문제에 대한 팁이 없습니다.'}
+                                    </ReactMarkdown>
+                                </div>
                             )}
                         </div>
                     </div>
