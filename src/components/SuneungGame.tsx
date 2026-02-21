@@ -27,7 +27,26 @@ interface SuneungGameProps {
 const GAME_DURATION = 60; // seconds
 const COMBO_FEVER_THRESHOLD = 10;
 const BASE_SCORE = 100;
-const FEVER_MULTIPLIER = 2;
+
+// Scaling combo multiplier — makes maintaining combos exponentially better
+function getComboMultiplier(combo: number): number {
+    if (combo >= 30) return 3.0;
+    if (combo >= 20) return 2.5;
+    if (combo >= 15) return 2.0;
+    if (combo >= 10) return 1.6;
+    if (combo >= 5) return 1.3;
+    return 1.0;
+}
+
+// Milestone bonuses at specific combo thresholds
+interface MilestoneBonus { points: number; time: number; label: string; }
+function getMilestoneBonus(combo: number): MilestoneBonus | null {
+    if (combo === 10) return { points: 500, time: 5, label: '🔥 10 COMBO!' };
+    if (combo === 20) return { points: 1500, time: 8, label: '⚡ 20 COMBO!!' };
+    if (combo === 30) return { points: 3000, time: 10, label: '🌟 30 COMBO!!!' };
+    if (combo === 50) return { points: 5000, time: 12, label: '💎 50 COMBO!!!!' };
+    return null;
+}
 
 // Client-side question generator (dynamic import to avoid SSR issues)
 let generateQuestionFn: ((seed: string, index: number, level?: number) => Question) | null = null;
@@ -49,6 +68,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
     const [currentLevel, setCurrentLevel] = useState(1);
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [timeDelta, setTimeDelta] = useState<{ value: number; key: number } | null>(null);
+    const [milestoneText, setMilestoneText] = useState<string | null>(null);
 
     const playedQuestionsRef = useRef<PlayedQuestion[]>([]);
     const questionStartTimeRef = useRef<number>(Date.now());
@@ -155,17 +175,30 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 // Calculate time bonus (decaying survival timer)
                 let timeBonus = Math.max(2, Math.round(12 * Math.exp(-newCombo / 12)));
                 if (newLevel >= 5) timeBonus = 15;
+
+                // Milestone bonus (10, 20, 30, 50 combo)
+                const milestone = getMilestoneBonus(newCombo);
+                if (milestone) {
+                    timeBonus += milestone.time;
+                    setMilestoneText(milestone.label);
+                    setTimeout(() => setMilestoneText(null), 2000);
+                }
+
                 setTimeLeft((prev) => Math.min(GAME_DURATION, prev + timeBonus));
                 // Time gain animation + sound
                 playTimeGain();
                 setTimeDelta({ value: timeBonus, key: Date.now() });
                 setTimeout(() => setTimeDelta(null), 800);
 
-                // Calculate points: 100 + (combo * 5) + floor(timeLeft * 2)
+                // Calculate points with scaling combo multiplier
+                const comboMultiplier = getComboMultiplier(newCombo);
                 const basePoints = 100 + (newCombo * 5) + Math.floor(timeLeft * 2);
-                const points = newIsFever
-                    ? basePoints * FEVER_MULTIPLIER
-                    : basePoints;
+                let points = Math.round(basePoints * comboMultiplier);
+
+                // Add milestone bonus points
+                if (milestone) {
+                    points += milestone.points;
+                }
 
                 setCombo(newCombo);
                 setIsFever(newIsFever);
@@ -174,13 +207,21 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 setCorrectCount((prev) => prev + 1);
                 setFeedback('correct');
             } else {
+                // Combo break penalty — scales with how high the combo was
+                const timePenalty = Math.min(10, 3 + Math.floor(combo / 5));
+                const scorePenalty = combo * 10;
+
                 setCombo(0);
                 setIsFever(false);
-                // Penalty: deduct 5 seconds for wrong answer
-                setTimeLeft((prev) => Math.max(0, prev - 5));
+                // Penalty: deduct scaled time for wrong answer
+                setTimeLeft((prev) => Math.max(0, prev - timePenalty));
+                // Deduct score (minimum 0)
+                if (scorePenalty > 0) {
+                    setScore((prev) => Math.max(0, prev - scorePenalty));
+                }
                 // Time loss animation + sound
                 playTimeLoss();
-                setTimeDelta({ value: -5, key: Date.now() });
+                setTimeDelta({ value: -timePenalty, key: Date.now() });
                 setTimeout(() => setTimeDelta(null), 800);
                 // Level persists — no reset on miss
                 setFeedback('wrong');
@@ -253,18 +294,18 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                         <div
                             key={combo} /* Force re-mount for pop animation on every combo change */
                             className={`text-sm font-bold transition-colors duration-200 ${isFever
-                                    ? 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]'
-                                    : combo >= 8 ? 'text-red-500'
-                                        : combo >= 5 ? 'text-orange-500'
-                                            : combo >= 3 ? 'text-amber-600'
-                                                : 'text-primary'
+                                ? 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]'
+                                : combo >= 8 ? 'text-red-500'
+                                    : combo >= 5 ? 'text-orange-500'
+                                        : combo >= 3 ? 'text-amber-600'
+                                            : 'text-primary'
                                 }`}
                             style={{
                                 animation: combo > 0 ? 'comboPop 0.25s ease-out' : 'none',
                                 fontSize: isFever ? '0.95rem' : undefined,
                             }}
                         >
-                            {isFever ? '🔥 FEVER' : combo > 0 ? `${combo} COMBO` : '0 COMBO'}
+                            {isFever ? `🔥 ${getComboMultiplier(combo)}x` : combo > 0 ? `${combo} COMBO` : '0 COMBO'}
                         </div>
                     </div>
                     <Link href="/">
@@ -299,6 +340,18 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                             <svg width="200" height="200" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray="252" strokeDashoffset="252" style={{ animation: 'drawCircle 0.4s ease-out forwards' }} />
                             </svg>
+                        </div>
+                    </div>
+                )}
+
+                {/* Milestone Banner */}
+                {milestoneText && (
+                    <div className="absolute inset-x-0 top-4 flex justify-center z-50 pointer-events-none">
+                        <div
+                            className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-slate-900 font-black text-xl px-8 py-3 rounded-2xl shadow-lg border-2 border-amber-500"
+                            style={{ animation: 'milestonePop 2s ease-out forwards' }}
+                        >
+                            {milestoneText}
                         </div>
                     </div>
                 )}
@@ -414,6 +467,28 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     to {
                         stroke-dashoffset: 0;
                         opacity: 1;
+                    }
+                }
+                /* Milestone combo banner animation */
+                @keyframes milestonePop {
+                    0% {
+                        transform: scale(0.5) translateY(20px);
+                        opacity: 0;
+                    }
+                    15% {
+                        transform: scale(1.2) translateY(0);
+                        opacity: 1;
+                    }
+                    25% {
+                        transform: scale(1.0) translateY(0);
+                    }
+                    80% {
+                        transform: scale(1.0) translateY(0);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: scale(0.8) translateY(-30px);
+                        opacity: 0;
                     }
                 }
             `}</style>

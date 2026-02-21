@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import SuneungGame from '@/components/SuneungGame';
 
 interface GameResult {
@@ -29,11 +29,13 @@ type GameState = 'loading' | 'playing' | 'submitting' | 'result';
 export default function PlayPage() {
     const [gameState, setGameState] = useState<GameState>('loading');
     const [session, setSession] = useState<SessionData | null>(null);
+    const sessionRef = useRef<SessionData | null>(null);
     const [result, setResult] = useState<GameResult | null>(null);
     const [rank, setRank] = useState<number | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
+    const renewIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch session on mount
     useEffect(() => {
@@ -49,13 +51,56 @@ export default function PlayPage() {
                 });
                 const data = await res.json();
                 setSession(data);
+                sessionRef.current = data;
                 setGameState('playing');
             } catch {
                 setError('세션을 시작할 수 없습니다. 다시 시도해주세요.');
             }
         };
         startSession();
+
+        return () => {
+            if (renewIntervalRef.current) clearInterval(renewIntervalRef.current);
+        };
     }, []);
+
+    // Rolling session renewal — every 3 minutes
+    useEffect(() => {
+        if (gameState !== 'playing' || !session) return;
+
+        const renewSession = async () => {
+            const current = sessionRef.current;
+            if (!current) return;
+            try {
+                const res = await fetch('/api/session/renew', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        seed: current.seed,
+                        userId: current.userId,
+                        token: current.token,
+                        expiresAt: current.expiresAt,
+                    }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setSession(data);
+                    sessionRef.current = data;
+                    console.log('[Session] Renewed successfully');
+                } else {
+                    console.warn('[Session] Renewal failed:', res.status);
+                }
+            } catch (e) {
+                console.warn('[Session] Renewal error:', e);
+            }
+        };
+
+        renewIntervalRef.current = setInterval(renewSession, 3 * 60 * 1000); // 3 min
+
+        return () => {
+            if (renewIntervalRef.current) clearInterval(renewIntervalRef.current);
+        };
+    }, [gameState, session]);
 
     // Handle game end
     const handleGameEnd = useCallback(
@@ -63,17 +108,21 @@ export default function PlayPage() {
             setResult(gameResult);
             setGameState('submitting');
 
-            if (!session) return;
+            // Stop renewal
+            if (renewIntervalRef.current) clearInterval(renewIntervalRef.current);
+
+            const currentSession = sessionRef.current;
+            if (!currentSession) return;
 
             try {
                 const res = await fetch('/api/submitScore', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        userId: session.userId,
-                        seed: session.seed,
-                        token: session.token,
-                        expiresAt: session.expiresAt,
+                        userId: currentSession.userId,
+                        seed: currentSession.seed,
+                        token: currentSession.token,
+                        expiresAt: currentSession.expiresAt,
                         score: gameResult.score,
                         playedQuestions: gameResult.playedQuestions,
                         timestamp: new Date().toISOString(),

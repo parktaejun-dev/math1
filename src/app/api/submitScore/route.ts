@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
                 verifiedCorrect++;
             }
             // Max score assumes all correct with fever and huge time bonus
-            maxPossibleScore += 1500; // theoretical generous max per question
+            maxPossibleScore += 6000; // theoretical generous max per question (3x multiplier + milestone)
         }
 
         // 6. Score plausibility check
