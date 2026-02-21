@@ -41,9 +41,9 @@ export function useGameTimer({ mode, initialValue, isPlaying, onComplete }: UseG
     }, [isPlaying, mode, onComplete]);
 
     const addTime = (amount: number) => {
-        if (mode === 'stopwatch') return; // Doesn't make sense to add time in stopwatch logically, but can be added if needed
+        if (mode === 'stopwatch') return;
 
-        setTime((prev) => prev + amount);
+        setTime((prev) => Math.max(0, prev + amount));
         setTimeDelta({ value: amount, key: Date.now() });
     };
 

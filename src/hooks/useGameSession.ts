@@ -13,7 +13,7 @@ interface UseGameSessionProps {
     seed: string;
     allowedTypes?: QType[];
     onCorrect?: (combo: number, timeMs: number) => void;
-    onWrong?: (timeMs: number) => void;
+    onWrong?: (timeMs: number, isPass?: boolean) => void;
 }
 
 export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGameSessionProps) {
@@ -86,6 +86,26 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
         loadQuestion(nextIdx, nextLevel || currentLevel);
     }, [currentIndex, currentLevel, loadQuestion]);
 
+    const submitPass = useCallback(() => {
+        if (!currentQuestion || feedback || isProcessing) return;
+        setIsProcessing(true);
+        setSelectedAnswer(-1); // -1 to indicate PASS
+
+        const timeMs = Date.now() - questionStartTimeRef.current;
+
+        playedQuestionsRef.current.push({
+            questionId: currentQuestion.id,
+            selectedAnswer: -1,
+            correct: false,
+            timeMs,
+            level: currentLevel
+        });
+
+        setFeedback('wrong'); // Treat as wrong
+        setCombo(0); // Reset combo
+        onWrong?.(timeMs, true); // Pass `true` indicating it was a PASS
+    }, [currentQuestion, feedback, isProcessing, currentLevel, onWrong]);
+
     return {
         isReady,
         currentIndex,
@@ -99,6 +119,7 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
         playedQuestionsRef,
         loadQuestion,
         submitAnswer,
+        submitPass,
         nextQuestion,
     };
 }

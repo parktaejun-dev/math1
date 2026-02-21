@@ -61,11 +61,12 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
         playedQuestionsRef,
         loadQuestion,
         submitAnswer,
+        submitPass,
         nextQuestion,
     } = useGameSession({
         seed,
         onCorrect: (newCombo) => handleSessionCorrect(newCombo),
-        onWrong: () => handleSessionWrong()
+        onWrong: (timeMs, isPass) => handleSessionWrong(isPass)
     });
 
     const {
@@ -156,12 +157,12 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
         }, 300);
     };
 
-    const handleSessionWrong = () => {
+    const handleSessionWrong = (isPass?: boolean) => {
         playWrong();
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-        const timePenalty = 5 + Math.floor(combo / 10) * 2;
-        const scorePenalty = Math.min(500, combo * 20);
+        const timePenalty = isPass ? 10 : 5 + Math.floor(combo / 10) * 2;
+        const scorePenalty = isPass ? 0 : Math.min(500, combo * 20); // No score deduction for PASS over combo break
 
         setIsFever(false);
         addTime(-timePenalty);
@@ -301,17 +302,29 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
 
             {/* Bottom Status Bar */}
             <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-slate-300 p-3 flex justify-between items-center shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
-                <div className="flex flex-col w-24">
+                <div className="flex flex-col w-20">
                     <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Score</span>
                     <span className={`text-xl leading-none font-black ${feedback === 'correct' ? 'text-primary scale-110' : 'text-slate-800'} transition-transform duration-150`}>
                         {score.toLocaleString()}
                     </span>
                 </div>
-                <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Question</span>
-                    <span className="text-base leading-none font-black text-slate-800">{currentIndex + 1}</span>
+
+                {/* PASS Button Space */}
+                <div className="flex items-center justify-center">
+                    <button
+                        onClick={submitPass}
+                        disabled={feedback !== null || isProcessing}
+                        className="px-4 py-2 bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold rounded-lg shadow-sm hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                    >
+                        PASS
+                    </button>
+                    <div className="flex flex-col items-center ml-4">
+                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Question</span>
+                        <span className="text-base leading-none font-black text-slate-800">{currentIndex + 1}</span>
+                    </div>
                 </div>
-                <div className="flex flex-col items-end w-24">
+
+                <div className="flex flex-col items-end w-20">
                     <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Accuracy</span>
                     <span className="text-base leading-none font-black text-slate-800">
                         {currentIndex > 0 ? Math.round((correctCount / currentIndex) * 100) : 0}%

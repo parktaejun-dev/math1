@@ -32,6 +32,7 @@ export default function PracticeGame({ seed, allowedTypes, onQuit }: PracticeGam
         isProcessing,
         loadQuestion,
         submitAnswer,
+        submitPass,
         nextQuestion,
     } = useGameSession({
         seed,
@@ -175,12 +176,21 @@ export default function PracticeGame({ seed, allowedTypes, onQuit }: PracticeGam
                         {currentIndex + 1}문제
                     </span>
                 </div>
-                <button
-                    onClick={handleStopPractice}
-                    className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg shadow-sm hover:shadow active:scale-95 transition-all"
-                >
-                    연습 종료
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={submitPass}
+                        disabled={feedback !== null || isProcessing}
+                        className="px-5 py-2.5 bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold rounded-lg shadow-sm hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                    >
+                        PASS
+                    </button>
+                    <button
+                        onClick={handleStopPractice}
+                        className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg shadow-sm hover:shadow active:scale-95 transition-all"
+                    >
+                        연습 종료
+                    </button>
+                </div>
             </div>
 
             <style jsx global>{`
