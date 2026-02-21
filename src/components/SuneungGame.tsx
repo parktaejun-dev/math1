@@ -207,7 +207,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     <div className="absolute inset-0 bg-blue-500/20 animate-pulse pointer-events-none" />
                 )}
 
-                <div className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                     <div className="flex flex-col items-start">
                         <div className={`text-xs font-bold leading-none ${currentLevel >= 5 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>
                             {currentLevel >= 5 ? 'INSANE' : `LV.${currentLevel}`}
@@ -229,12 +229,10 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                             {isFever ? `🔥 ${getComboMultiplier(combo)}x` : combo > 0 ? `${combo}연속 정답` : '0연속 정답'}
                         </div>
                     </div>
-                    <Link href="/">
-                        <h1 className="text-base font-bold text-slate-900 leading-none tracking-tight ml-2 cursor-pointer hover:opacity-80 transition-opacity">
-                            수능 1번
-                        </h1>
-                    </Link>
-                </div>
+                    <h1 className="text-base font-bold text-slate-900 leading-none tracking-tight ml-2">
+                        수능 1번
+                    </h1>
+                </Link>
                 <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-300 relative">
                     <span className={`material-symbols-outlined text-[16px] ${isUrgent ? 'text-grading-red' : 'text-primary'}`}>timer</span>
                     <span className={`font-bold font-mono text-sm leading-none ${isUrgent ? 'text-grading-red animate-pulse' : 'text-primary'}`}>{Math.max(0, timeLeft)}초</span>
@@ -297,6 +295,8 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     selectedAnswer={selectedAnswer}
                     onAnswer={submitAnswer}
                     isProcessing={isProcessing}
+                    onPass={submitPass}
+                    passPenaltyText="사용 시 10초 차감"
                 />
             </main>
 
@@ -309,19 +309,9 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                     </span>
                 </div>
 
-                {/* PASS Button Space */}
-                <div className="flex items-center justify-center">
-                    <button
-                        onClick={submitPass}
-                        disabled={feedback !== null || isProcessing}
-                        className="px-4 py-2 bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold rounded-lg shadow-sm hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
-                    >
-                        PASS
-                    </button>
-                    <div className="flex flex-col items-center ml-4">
-                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Question</span>
-                        <span className="text-base leading-none font-black text-slate-800">{currentIndex + 1}</span>
-                    </div>
+                <div className="flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-0.5">Question</span>
+                    <span className="text-base leading-none font-black text-slate-800">{currentIndex + 1}</span>
                 </div>
 
                 <div className="flex flex-col items-end w-20">

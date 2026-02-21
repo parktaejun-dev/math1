@@ -10,6 +10,8 @@ interface QuestionBoardProps {
     selectedAnswer: number | null;
     onAnswer: (index: number) => void;
     isProcessing: boolean;
+    onPass?: () => void;
+    passPenaltyText?: string;
 }
 
 export default function QuestionBoard({
@@ -20,6 +22,8 @@ export default function QuestionBoard({
     selectedAnswer,
     onAnswer,
     isProcessing,
+    onPass,
+    passPenaltyText,
 }: QuestionBoardProps) {
     if (!currentQuestion) return null;
 
@@ -57,6 +61,20 @@ export default function QuestionBoard({
             </div>
 
             <div className="mt-auto pt-2">
+                {onPass && (
+                    <div className="mb-6">
+                        <button
+                            onClick={onPass}
+                            disabled={feedback !== null || isProcessing}
+                            className="w-full px-4 py-3 bg-white text-slate-700 border-2 border-slate-300 border-dashed hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100 transition-all rounded-xl shadow-sm disabled:opacity-50 disabled:pointer-events-none flex flex-col items-center justify-center gap-0.5"
+                        >
+                            <span className="font-bold tracking-widest text-base">PASS</span>
+                            {passPenaltyText && (
+                                <span className="text-xs font-medium text-slate-500">{passPenaltyText}</span>
+                            )}
+                        </button>
+                    </div>
+                )}
                 <div className="grid grid-cols-1 gap-2 w-full">
                     {currentQuestion.choices.map((choice, idx) => {
                         const numMap = ['①', '②', '③', '④', '⑤'];
