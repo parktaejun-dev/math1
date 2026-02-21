@@ -150,7 +150,7 @@ export default function PracticeGame({ seed, allowedTypes, onQuit }: PracticeGam
             </header>
 
             {/* Main Area */}
-            <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative">
+            <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
                 <FeedbackOverlay
                     feedback={feedback}
                     correctText="정답!"
