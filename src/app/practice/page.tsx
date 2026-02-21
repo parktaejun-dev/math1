@@ -79,8 +79,10 @@ export default function PracticeSetupPage() {
 
                     <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                         {TOPICS.map(topic => (
-                            <label key={topic.id} className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer select-none active:scale-[0.99] ${selectedTypes.has(topic.id) ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'
-                                }`}>
+                            <button key={topic.id}
+                                onClick={() => toggleType(topic.id)}
+                                className={`w-full text-left flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer select-none active:scale-[0.99] ${selectedTypes.has(topic.id) ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'
+                                    }`}>
                                 <div className="flex flex-col">
                                     <span className={`font-bold ${selectedTypes.has(topic.id) ? 'text-primary' : 'text-slate-700'}`}>
                                         {topic.label}
@@ -91,7 +93,7 @@ export default function PracticeSetupPage() {
                                     }`}>
                                     {selectedTypes.has(topic.id) && <span className="material-symbols-outlined text-[16px] text-white">check</span>}
                                 </div>
-                            </label>
+                            </button>
                         ))}
                     </div>
 
