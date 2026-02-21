@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import SuneungGame from '@/components/SuneungGame';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 interface GameResult {
     score: number;
@@ -221,13 +221,14 @@ export default function PlayPage() {
         if (!resultRef.current || isSharing) return;
         setIsSharing(true);
         try {
-            const canvas = await html2canvas(resultRef.current, { backgroundColor: '#f1f5f9', scale: 2 });
+            const dataUrl = await toPng(resultRef.current, { backgroundColor: '#f1f5f9', pixelRatio: 2 });
             const link = document.createElement('a');
             link.download = `suneung1_result_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             link.click();
         } catch (e) {
             console.error('Failed to save image', e);
+            alert('이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsSharing(false);
         }
