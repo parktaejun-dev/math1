@@ -9,6 +9,7 @@ export interface Question {
   answer: number;
   choices: number[];
   type: string;
+  hint?: string;
 }
 
 // Mulberry32 PRNG — fast, deterministic, 32-bit state
@@ -171,6 +172,7 @@ function generateType1Question(rng: () => number): Omit<Question, 'id' | 'choice
     latex: `\\left(${root}^{\\sqrt{${pair.d}} + ${pair.a}}\\right)^{\\sqrt{${pair.d}} - ${pair.a}} = ?`,
     answer: ans,
     type: 'exp',
+    hint: `지수법칙 $(a^m)^n = a^{mn}$을 적용한 후, 합차공식 $(x+y)(x-y) = x^2 - y^2$을 이용해보세요.`
   };
 }
 
@@ -197,6 +199,7 @@ function generateType2Question(rng: () => number): Omit<Question, 'id' | 'choice
     latex: `\\begin{gather*} f(x) = ${funcStr} \\\\ ${limitTex} = ? \\end{gather*}`,
     answer,
     type: 'diff',
+    hint: `주어진 극한식은 $x=${a}$에서의 미분계수 $f'(${a})$를 뜻합니다. 먼저 다항함수 $f(x)$를 미분하여 $f'(x)$를 구해보세요.`
   };
 }
 
@@ -211,6 +214,7 @@ function generateType3Question(rng: () => number): Omit<Question, 'id' | 'choice
     latex: `\\begin{gather*} \\sum_{k=1}^{${N}} (a_k + ${c}) = ${X} \\\\ \\sum_{k=1}^{${N}} a_k = ? \\end{gather*}`,
     answer: ans,
     type: 'seq',
+    hint: `시그마의 성질 $\\sum (A_k + B) = \\sum A_k + \\sum B$를 이용하세요. 상수 ${c}를 ${N}번 더하면 ${c * N}이 됩니다.`
   };
 }
 
@@ -226,7 +230,8 @@ function generateType4Question(rng: () => number): Omit<Question, 'id' | 'choice
   return {
     latex: `\\int_{0}^{${a}} (3x^2 + ${2 * b}x) \\,dx = ?`,
     answer: ans,
-    type: 'int'
+    type: 'int',
+    hint: `$x^n$을 적분하면 $\\frac{1}{n+1}x^{n+1}$이 됩니다. 적분 후 위끝 ${a}를 대입한 값에서 아래끝 $0$을 대입한 값을 빼세요.`
   }
 }
 
@@ -242,7 +247,8 @@ function generateType5Question(rng: () => number): Omit<Question, 'id' | 'choice
   return {
     latex: `\\log_{${base}} ${b} + \\log_{${base}} ${c} = ?`,
     answer: ans,
-    type: 'log'
+    type: 'log',
+    hint: `밑이 같은 로그의 덧셈은 진수의 곱셈과 같습니다: $\\log_a x + \\log_a y = \\log_a (xy)$. 그 후 $\\log_a a^n = n$을 이용하세요.`
   };
 }
 
@@ -273,7 +279,12 @@ function generateTrigBasicQuestion(rng: () => number): Omit<Question, 'id' | 'ch
       break;
     }
   }
-  return { latex, answer: ans, type: 'trig_basic' };
+  return {
+    latex,
+    answer: ans,
+    type: 'trig_basic',
+    hint: `특수각의 삼각비 값을 떠올려보세요. $\\sin(\\pi/6)=\\cos(\\pi/3)=1/2$, $\\sin(\\pi/2)=\\tan(\\pi/4)=\\cos(0)=1$ 입니다.`
+  };
 }
 
 // [6] NEW: Limits Basic (0/0 factorization)
@@ -292,7 +303,8 @@ function generateLimitBasicQuestion(rng: () => number): Omit<Question, 'id' | 'c
   return {
     latex: `\\lim_{x \\to ${a}} \\frac{${num_str}}{x - ${a}} = ?`,
     answer: a + b,
-    type: 'limit_basic'
+    type: 'limit_basic',
+    hint: `$x=${a}$를 대입하면 분모가 $0$이 됩니다. 분자도 $0$이 되므로, 분자를 인수분해하여 $(x-${a})$ 약분한 뒤 대입하세요.`
   };
 }
 
@@ -309,7 +321,12 @@ function generateContinuityQuestion(rng: () => number): Omit<Question, 'id' | 'c
   if (K <= 0) { A = 2; B = 3; c = 1; K = 4; }
 
   const latex = `\\text{함수 } f(x) = \\begin{cases} ${A === 1 ? '' : A}x + ${B} & (x < ${c}) \\\\ x^2 + k & (x \\ge ${c}) \\end{cases} \\\\ \\text{가 실수 전체에서 연속일 때, } k = ?`;
-  return { latex, answer: K, type: 'continuity' };
+  return {
+    latex,
+    answer: K,
+    type: 'continuity',
+    hint: `함수가 $x=${c}$에서 연속이려면 좌극한과 우극한이 같아야 합니다. 위 식에 ${c}를 대입한 값과 아래 식에 ${c}를 대입한 값이 같다고 두고 $k$를 구하세요.`
+  };
 }
 
 // [8] NEW: Sigma Formulas
@@ -323,7 +340,12 @@ function generateSigmaBasicQuestion(rng: () => number): Omit<Question, 'id' | 'c
 
   const Astr = A === 1 ? '' : A;
   const latex = `\\sum_{k=1}^{${N}} (${Astr}k + ${B}) = ?`;
-  return { latex, answer: ans, type: 'sigma_basic' };
+  return {
+    latex,
+    answer: ans,
+    type: 'sigma_basic',
+    hint: `자연수의 거듭제곱의 합 공식을 떠올려보세요. $\\sum_{k=1}^n k = \\frac{n(n+1)}{2}$ 입니다.`
+  };
 }
 
 // [9] NEW: Extrema
@@ -342,7 +364,12 @@ function generateExtremaQuestion(rng: () => number): Omit<Question, 'id' | 'choi
   const funcStr = `x^3 - ${coef2}x^2 + ${coef1}x + ${C}`;
   const latex = `\\text{함수 } f(x) = ${funcStr} \\text{ 가} \\\\ x=a \\text{ 에서 극솟값을 가질 때, } a = ?`;
 
-  return { latex, answer: B, type: 'extrema' };
+  return {
+    latex,
+    answer: B,
+    type: 'extrema',
+    hint: `함수 $f(x)$가 극값을 가질 때 $f'(x)=0$이 됩니다. 미분하여 $f'(x)=0$을 만족하는 $x$를 찾고, 그 중 극소가 되는 위치(보통 더 큰 근)를 찾아보세요.`
+  };
 }
 
 // ─── Main API ──────────────────────────────────────────────────────

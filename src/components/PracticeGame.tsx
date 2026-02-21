@@ -168,6 +168,7 @@ export default function PracticeGame({ seed, allowedTypes, onQuit }: PracticeGam
                     isProcessing={isProcessing}
                     onPass={submitPass}
                     passPenaltyText="오답으로 기록됨 (시간 제약 없음)"
+                    aiMode={true}
                 />
             </main>
 

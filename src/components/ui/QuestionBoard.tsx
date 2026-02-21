@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import katex from 'katex';
 import { Question } from '@/lib/MathGenerator';
 
@@ -12,6 +12,7 @@ interface QuestionBoardProps {
     isProcessing: boolean;
     onPass?: () => void;
     passPenaltyText?: string;
+    aiMode?: boolean;
 }
 
 export default function QuestionBoard({
@@ -24,8 +25,47 @@ export default function QuestionBoard({
     isProcessing,
     onPass,
     passPenaltyText,
+    aiMode = false,
 }: QuestionBoardProps) {
+    const [isHintOpen, setIsHintOpen] = useState(false);
+    const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+
+    // Reset state when question changes
+    React.useEffect(() => {
+        setIsHintOpen(false);
+        setAiExplanation(null);
+        setIsAiLoading(false);
+    }, [currentIndex]);
+
     if (!currentQuestion) return null;
+
+    const handleToggleHint = async () => {
+        if (!isHintOpen && aiMode && !aiExplanation && !isAiLoading) {
+            setIsHintOpen(true);
+            setIsAiLoading(true);
+            try {
+                const res = await fetch('/api/explain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latex: currentQuestion.latex,
+                        choices: currentQuestion.choices,
+                        answer: currentQuestion.answer
+                    })
+                });
+                const data = await res.json();
+                if (data.explanation) setAiExplanation(data.explanation);
+                else setAiExplanation('해설을 불러오는데 실패했습니다.');
+            } catch (err) {
+                setAiExplanation('오류가 발생했습니다. 다시 시도해주세요.');
+            } finally {
+                setIsAiLoading(false);
+            }
+        } else {
+            setIsHintOpen(!isHintOpen);
+        }
+    };
 
     // Render KaTeX safely
     const renderLatex = (latex: string) => {
@@ -61,6 +101,43 @@ export default function QuestionBoard({
             </div>
 
             <div className="mt-auto pt-2">
+                <div className="mb-4">
+                    <button
+                        onClick={handleToggleHint}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer rounded-lg border border-slate-200"
+                    >
+                        <span className="font-serif font-bold text-sm text-slate-700 tracking-wide flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[18px] text-amber-500">{aiMode ? "smart_toy" : "lightbulb"}</span>
+                            {aiMode ? "AI 정답 해설 보기" : "아재들을 위한 꿀팁"}
+                        </span>
+                        <span className={`text-slate-400 text-xs transition-transform duration-300 ${isHintOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    <div
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${isHintOpen ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                    >
+                        <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-lg">
+                            {aiMode ? (
+                                isAiLoading ? (
+                                    <div className="flex items-center justify-center py-4 text-slate-500 gap-2">
+                                        <span className="material-symbols-outlined animate-spin text-xl">refresh</span>
+                                        <span className="text-sm font-medium">AI 선생님이 해설을 작성중입니다...</span>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800"
+                                        dangerouslySetInnerHTML={renderLatex(aiExplanation || '')}
+                                    />
+                                )
+                            ) : (
+                                <div
+                                    className="text-sm text-slate-700 leading-relaxed font-sans [&_.katex]:!text-slate-800"
+                                    dangerouslySetInnerHTML={renderLatex(currentQuestion.hint || '이 문제에 대한 팁이 없습니다.')}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 {onPass && (
                     <div className="mb-6">
                         <button
