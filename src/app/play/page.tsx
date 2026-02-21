@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import SuneungGame from '@/components/SuneungGame';
+import html2canvas from 'html2canvas';
 
 interface GameResult {
     score: number;
@@ -36,6 +37,7 @@ export default function PlayPage() {
     const [error, setError] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
     const renewIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const resultRef = useRef<HTMLDivElement>(null);
 
     // Fetch session on mount
     useEffect(() => {
@@ -140,6 +142,53 @@ export default function PlayPage() {
                 setSubmitError('점수 저장 중 네트워크 오류가 발생했습니다.');
             }
 
+            // --- Phase 2: Save to LocalStorage ---
+            try {
+                const accuracy = gameResult.total > 0 ? Math.round((gameResult.correct / gameResult.total) * 100) : 0;
+
+                // 1. PB (Personal Best)
+                const currentPb = parseInt(localStorage.getItem('suneung1_pb') || '0', 10);
+                if (gameResult.score > currentPb) {
+                    localStorage.setItem('suneung1_pb', gameResult.score.toString());
+                }
+
+                // 2. History
+                const historyRaw = localStorage.getItem('suneung1_history');
+                let history = [];
+                if (historyRaw) {
+                    try { history = JSON.parse(historyRaw); } catch (e) { }
+                }
+                history.unshift({
+                    date: new Date().toISOString(),
+                    score: gameResult.score,
+                    accuracy,
+                    maxCombo: gameResult.maxCombo
+                });
+                // Keep only last 10 records
+                if (history.length > 10) history = history.slice(0, 10);
+                localStorage.setItem('suneung1_history', JSON.stringify(history));
+
+                // 3. Achievements
+                const achievementsRaw = localStorage.getItem('suneung1_achievements');
+                let achievements: string[] = [];
+                if (achievementsRaw) {
+                    try { achievements = JSON.parse(achievementsRaw); } catch (e) { }
+                }
+                // Check new achievements
+                if (gameResult.maxCombo >= 10 && !achievements.includes('COMBO_10')) achievements.push('COMBO_10');
+                if (gameResult.maxCombo >= 20 && !achievements.includes('COMBO_20')) achievements.push('COMBO_20');
+                if (gameResult.maxCombo >= 30 && !achievements.includes('COMBO_30')) achievements.push('COMBO_30');
+                if (gameResult.maxCombo >= 50 && !achievements.includes('COMBO_50')) achievements.push('COMBO_50');
+                if (gameResult.score >= 10000 && !achievements.includes('SCORE_10K')) achievements.push('SCORE_10K');
+                if (gameResult.score >= 30000 && !achievements.includes('SCORE_30K')) achievements.push('SCORE_30K');
+
+                if (accuracy === 100 && gameResult.total >= 10 && !achievements.includes('PERFECT_10')) achievements.push('PERFECT_10');
+
+                localStorage.setItem('suneung1_achievements', JSON.stringify(achievements));
+            } catch (e) {
+                console.error('Failed to save local stats', e);
+            }
+
             setGameState('result');
         },
         [session]
@@ -162,6 +211,23 @@ export default function PlayPage() {
             if (error instanceof Error && error.name !== 'AbortError') {
                 console.error('Share failed:', error);
             }
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    // Download Image
+    const handleDownloadImage = async () => {
+        if (!resultRef.current || isSharing) return;
+        setIsSharing(true);
+        try {
+            const canvas = await html2canvas(resultRef.current, { backgroundColor: '#f1f5f9', scale: 2 });
+            const link = document.createElement('a');
+            link.download = `suneung1_result_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (e) {
+            console.error('Failed to save image', e);
         } finally {
             setIsSharing(false);
         }
@@ -220,7 +286,7 @@ export default function PlayPage() {
                 </header>
 
                 <main className="flex-grow flex items-center justify-center p-4 sm:p-8">
-                    <div className="relative w-full max-w-[800px] min-h-[600px] bg-paper shadow-2xl flex flex-col overflow-hidden before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E')] before:pointer-events-none">
+                    <div ref={resultRef} className="relative w-full max-w-[800px] min-h-[600px] bg-paper shadow-2xl flex flex-col overflow-hidden before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E')] before:pointer-events-none">
 
                         <div className="border-b-2 border-slate-800 p-6 sm:p-8 pb-4 mx-4 sm:mx-8 mt-4 sm:mt-8 flex flex-col gap-2">
                             <div className="flex justify-between items-end">
@@ -291,6 +357,24 @@ export default function PlayPage() {
                                         교육과정평가원 서버로 전송 중...
                                     </div>
                                 )}
+
+                                {/* OMR Review Section */}
+                                {gameState === 'result' && result?.playedQuestions && (
+                                    <div className="mt-8 pt-6 border-t border-slate-300 w-full mb-8" style={{ animation: 'inkFadeIn 0.8s ease-out 1.5s forwards', opacity: 0 }}>
+                                        <h3 className="font-serif font-bold text-slate-700 mb-3 text-center sm:text-left">문항별 채점 결과</h3>
+                                        <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                            {result.playedQuestions.map((q, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-bold shadow-sm ${q.correct ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-grading-red text-grading-red'
+                                                        }`}
+                                                >
+                                                    {i + 1}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -306,7 +390,14 @@ export default function PlayPage() {
                                 <div className="absolute inset-0 bg-blue-700 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
                                 <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
                                     <span className="material-symbols-outlined text-[20px]">share</span>
-                                    성적표 공유
+                                    결과 공유
+                                </span>
+                            </button>
+                            <button onClick={handleDownloadImage} disabled={gameState === 'submitting' || isSharing} className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-emerald-600 border border-emerald-600 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden disabled:opacity-50">
+                                <div className="absolute inset-0 bg-emerald-700 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">download</span>
+                                    이미지 저장
                                 </span>
                             </button>
                             <a href="/" className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-slate-900 border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden">

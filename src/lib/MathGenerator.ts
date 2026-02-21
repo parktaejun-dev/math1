@@ -50,7 +50,6 @@ function detectBase(n: number): number {
 }
 
 // Fixed choices array in ascending order (typical of CSAT)
-// Now type-aware: produces mathematically coherent distractors per question type.
 function generateCSATChoices(answer: number, rng: () => number, type: string = 'generic'): number[] {
   if (!Number.isFinite(answer) || !Number.isInteger(answer) || answer <= 0) {
     throw new Error('generateCSATChoices expects positive integer answer');
@@ -59,60 +58,48 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
   const pool = new Set<number>();
 
   if (type === 'exp') {
-    // ── Exponent problems: ALL choices must be powers of the same base ──
-    // e.g. answer=8 (2^3) → choices from {2,4,8,16,32,64,128,...}
     const base = detectBase(answer);
     if (base > 0) {
-      // Generate many powers of this base
       const powers: number[] = [];
       for (let e = 1; e <= 12; e++) {
         const v = Math.pow(base, e);
         if (v > 0 && v <= 10000) powers.push(v);
       }
-      // Remove the answer, add remaining as distractors
       powers.filter(v => v !== answer).forEach(v => pool.add(v));
     }
-    // Also add "wrong exponent" neighbors: answer * base, answer / base
     if (answer * 2 <= 5000) pool.add(answer * 2);
     if (answer * 3 <= 5000) pool.add(answer * 3);
     if (answer % 2 === 0 && answer / 2 > 0) pool.add(answer / 2);
     if (answer % 3 === 0 && answer / 3 > 0) pool.add(answer / 3);
 
-  } else if (type === 'log') {
-    // ── Log problems: answers are small integers (1~8). Use nearby integers. ──
+  } else if (type === 'log' || type === 'trig_basic' || type === 'limit_basic' || type === 'continuity' || type === 'extrema') {
+    // These generally yield small integer answers (1~10)
+    // CSAT style: small neighboring integers
     for (let d = 1; d <= 8; d++) {
       if (d !== answer) pool.add(d);
     }
-
   } else if (type === 'int') {
-    // ── Integration problems: coefficient/sign mistakes produce proportional errors ──
-    // Typical mistakes: forgetting +1 in exponent, halving/doubling a term
     const fracs = [2 / 3, 3 / 4, 4 / 3, 3 / 2, 1 / 2, 5 / 4];
     fracs.forEach(f => {
       const v = Math.round(answer * f);
       if (v > 0 && v !== answer) pool.add(v);
     });
-    // Also ±small proportional offsets
     if (answer > 3) pool.add(answer - 3);
     pool.add(answer + 3);
     if (answer > 5) pool.add(answer - 5);
     pool.add(answer + 5);
 
   } else if (type === 'diff') {
-    // ── Differentiation: sign/coefficient errors yield answers in the same magnitude ──
     const offsets = [2, 4, 6, 8];
     offsets.forEach(o => {
       if (answer > o) pool.add(answer - o);
       pool.add(answer + o);
     });
-    // Forgetting to multiply by coefficient of x
     if (answer % 2 === 0) pool.add(answer / 2);
     if (answer % 3 === 0) pool.add(answer / 3);
     pool.add(answer * 2);
 
-  } else if (type === 'seq') {
-    // ── Sequence/Sigma: wrong constant term or multiplier ──
-    // Common mistake: forget to multiply the constant by N, or use N±1
+  } else if (type === 'seq' || type === 'sigma_basic') {
     const offsets = [3, 5, 7, 10, 12, 15];
     offsets.forEach(o => {
       if (answer > o) pool.add(answer - o);
@@ -121,7 +108,7 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
     if (answer > 6) pool.add(answer - 6);
 
   } else {
-    // ── Generic fallback ──
+    // Generic
     if (answer > 1) pool.add(answer - 1);
     pool.add(answer + 1);
     if (answer > 2) pool.add(answer - 2);
@@ -130,12 +117,10 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
     pool.add(answer * 2);
   }
 
-  // Convert pool to array, filter out the answer itself & non-positive integers
   let distractorArray = Array.from(pool).filter(d =>
     d !== answer && d > 0 && Number.isInteger(d)
   );
 
-  // Shuffle distractor array to randomly pick 4
   for (let i = distractorArray.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [distractorArray[i], distractorArray[j]] = [distractorArray[j], distractorArray[i]];
@@ -146,7 +131,6 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
     selectedDistractors.add(distractorArray[i]);
   }
 
-  // Fallback: add proportional offsets if pool was too small
   let offset = 1;
   const step = answer < 10 ? 1 : answer < 50 ? 3 : Math.max(5, Math.round(answer * 0.1));
   while (selectedDistractors.size < 4) {
@@ -160,129 +144,55 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
       selectedDistractors.add(candidate2);
     }
     offset++;
-    if (offset > 20) break; // safety
+    if (offset > 20) break;
   }
 
-  // Combine answer + 4 distractors, sort ascending (CSAT style)
   const finalChoices = [answer, ...Array.from(selectedDistractors)];
   return finalChoices.sort((a, b) => a - b);
 }
 
 // ─── Question Generators ───────────────────────────────────────────
 
-// [Type 1] Exponents & Roots (CSAT Question 1)
+// [0] Exponents
 function generateType1Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
-  const subType = Math.floor(rng() * 2);
+  // Irrational exponents using difference of squares: (root^{\sqrt{d} + a})^{\sqrt{d} - a}
+  const root = [2, 3][Math.floor(rng() * 2)];
+  const validPairs = [
+    { d: 3, a: 1 },
+    { d: 5, a: 1 },
+    { d: 5, a: 2 },
+    { d: 7, a: 2 },
+    { d: 6, a: 2 },
+  ];
+  const pair = validPairs[Math.floor(rng() * validPairs.length)];
+  const ans = Math.pow(root, pair.d - pair.a * pair.a);
 
-  if (subType === 0) {
-    // Rational exponents: (base1)^(a/q) * (base2)^(b/q) = integer
-    // To be elegant, base1 = root^p1, base2 = root^p2
-    // CSAT avoids unsimplified fractions and bases like 9^(2/3). 
-    // Usually uses bases 2, 4, 8, 16 or 3, 9, 27.
-    const roots = [2, 3];
-    const root = roots[Math.floor(rng() * roots.length)];
-    let q = [2, 3, 4][Math.floor(rng() * 3)];
-
-    let p1 = 1, p2 = 1, a = 1, b = 1;
-    let found = false;
-
-    // Find nice combinations where exponents don't cleanly simplify before multiplication,
-    // but their sum resolves to an integer.
-    for (let attempts = 0; attempts < 100; attempts++) {
-      p1 = Math.floor(rng() * 3) + 1; // 1 to 3
-      p2 = Math.floor(rng() * 3) + 1; // 1 to 3
-      a = Math.floor(rng() * 5) + 1; // 1 to 5
-      b = Math.floor(rng() * 5) + 1; // 1 to 5
-
-      // Ensure bases aren't identical to make it more realistic
-      if (p1 === p2) continue;
-
-      // Ensure fractions don't trivially simplify to integers before product
-      if ((p1 * a) % q === 0 || (p2 * b) % q === 0) continue;
-
-      // Ensure a/q and b/q are irreducible (simplest form) to avoid e.g. 8^(2/4)
-      const gcd = (x: number, y: number): number => y === 0 ? x : gcd(y, x % y);
-      if (gcd(a, q) !== 1 || gcd(b, q) !== 1) continue;
-
-      // Must result in integer exponent
-      if ((p1 * a + p2 * b) % q === 0) {
-        found = true;
-        break;
-      }
-    }
-
-    // Fallback if no combo found (extremely rare)
-    if (!found) { [p1, a, p2, b, q] = [1, 5, 2, 2, 3]; }
-
-    const base1 = Math.pow(root, p1);
-    const base2 = Math.pow(root, p2);
-    const finalExp = (p1 * a + p2 * b) / q;
-    const ans = Math.pow(root, finalExp);
-
-    return {
-      latex: `${base1}^{\\frac{${a}}{${q}}} \\times ${base2}^{\\frac{${b}}{${q}}} = ?`,
-      answer: ans,
-      type: 'exp',
-    };
-  } else {
-    // Irrational exponents using difference of squares: (root^{\sqrt{d} + a})^{\sqrt{d} - a}
-    const root = [2, 3][Math.floor(rng() * 2)];
-    // Pick d and a such that d - a^2 > 0 and d is not a perfect square
-    const validPairs = [
-      { d: 3, a: 1 }, // 3 - 1 = 2 -> root^2
-      { d: 5, a: 1 }, // 5 - 1 = 4 -> root^4
-      { d: 5, a: 2 }, // 5 - 4 = 1 -> root^1
-      { d: 7, a: 2 }, // 7 - 4 = 3 -> root^3
-      { d: 6, a: 2 }, // 6 - 4 = 2 -> root^2
-    ];
-    const pair = validPairs[Math.floor(rng() * validPairs.length)];
-    const ans = Math.pow(root, pair.d - pair.a * pair.a);
-
-    return {
-      latex: `\\left(${root}^{\\sqrt{${pair.d}} + ${pair.a}}\\right)^{\\sqrt{${pair.d}} - ${pair.a}} = ?`,
-      answer: ans,
-      type: 'exp',
-    };
-  }
+  return {
+    latex: `\\left(${root}^{\\sqrt{${pair.d}} + ${pair.a}}\\right)^{\\sqrt{${pair.d}} - ${pair.a}} = ?`,
+    answer: ans,
+    type: 'exp',
+  };
 }
 
-// [Type 2] Polynomial differentiation (CSAT limits)
+// [1] Differentiation (limits)
 function generateType2Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
-  // f(x) = x^3 + Bx^2 + Cx + D, find lim h->0 (f(a+h)-f(a))/h or lim x->a (f(x)-f(a))/(x-a)
   let B = 0, C = 0, D = 0, a = 0, answer = 0;
-
-  // Ensure the answer is strictly positive to fit CSAT norms
-  // Retry loop using the same RNG instead of recursion
   for (let attempts = 0; attempts < 100; attempts++) {
-    B = Math.floor(rng() * 5) - 2; // -2 to 2
-    C = Math.floor(rng() * 5) - 2; // -2 to 2
-    D = Math.floor(rng() * 9) + 1; // 1 to 9
-    a = Math.floor(rng() * 3) + 1; // 1 to 3
-
-    // f'(x) = 3x^2 + 2Bx + C
+    B = Math.floor(rng() * 5) - 2;
+    C = Math.floor(rng() * 5) - 2;
+    D = Math.floor(rng() * 9) + 1;
+    a = Math.floor(rng() * 3) + 1;
     answer = 3 * a * a + 2 * B * a + C;
-
     if (answer > 0) break;
   }
-
-  // Fallback in highly improbable case
   if (answer <= 0) { B = 1; C = 1; a = 1; answer = 5; }
-
-  const subType = Math.floor(rng() * 2);
 
   let funcStr = `x^3`;
   if (B !== 0) funcStr += B > 0 ? ` + ${B === 1 ? '' : B}x^2` : ` - ${Math.abs(B) === 1 ? '' : Math.abs(B)}x^2`;
   if (C !== 0) funcStr += C > 0 ? ` + ${C === 1 ? '' : C}x` : ` - ${Math.abs(C) === 1 ? '' : Math.abs(C)}x`;
   funcStr += ` + ${D}`;
 
-  let limitTex = '';
-  if (subType === 0) {
-    limitTex = `\\lim_{h \\to 0} \\frac{f(${a}+h) - f(${a})}{h}`;
-  } else {
-    // Sometimes CSAT asks lim_{x->a} (f(x)-f(a))/(x-a) which is the same as f'(a)
-    limitTex = `\\lim_{x \\to ${a}} \\frac{f(x) - f(${a})}{x - ${a}}`;
-  }
-
+  const limitTex = `\\lim_{h \\to 0} \\frac{f(${a}+h) - f(${a})}{h}`;
   return {
     latex: `\\begin{gather*} f(x) = ${funcStr} \\\\ ${limitTex} = ? \\end{gather*}`,
     answer,
@@ -290,50 +200,26 @@ function generateType2Question(rng: () => number): Omit<Question, 'id' | 'choice
   };
 }
 
-// [Type 3] Arithmetic series / Sigma properties
+// [2] Sequence sum inference
 function generateType3Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
-  const N = Math.floor(rng() * 4) + 7; // 7 ~ 10
+  const N = Math.floor(rng() * 4) + 7;
+  const ans = Math.floor(rng() * 20) + 10;
+  const c = Math.floor(rng() * 3) + 2;
+  const X = ans + c * N;
 
-  // sum_{k=1}^N (a_k + B) = C, sum_{k=1}^N (a_k - B) = D => find \sum a_k
-  // Or sum_{k=1}^N a_k = X, find sum_{k=1}^N (2a_k + c) = ?
-
-  const subType = Math.floor(rng() * 2);
-
-  if (subType === 0) {
-    // Given \sum_{k=1}^N a_k = X, find \sum_{k=1}^N (A a_k + B)
-    const sumA = Math.floor(rng() * 20) + 10; // 10 to 29
-    const A = Math.floor(rng() * 3) + 2; // 2 to 4
-    const B = Math.floor(rng() * 4) + 1; // 1 to 4
-
-    const ans = A * sumA + B * N;
-
-    return {
-      latex: `\\begin{gather*} \\sum_{k=1}^{${N}} a_k = ${sumA} \\\\ \\sum_{k=1}^{${N}} (${A}a_k + ${B}) = ? \\end{gather*}`,
-      answer: ans,
-      type: 'seq',
-    };
-  } else {
-    // sum_{k=1}^N (a_k + c) = X => find sum_{k=1}^N a_k
-    const ans = Math.floor(rng() * 20) + 10;
-    const c = Math.floor(rng() * 3) + 2; // 2 to 4
-    const X = ans + c * N;
-
-    return {
-      latex: `\\begin{gather*} \\sum_{k=1}^{${N}} (a_k + ${c}) = ${X} \\\\ \\sum_{k=1}^{${N}} a_k = ? \\end{gather*}`,
-      answer: ans,
-      type: 'seq',
-    };
-  }
+  return {
+    latex: `\\begin{gather*} \\sum_{k=1}^{${N}} (a_k + ${c}) = ${X} \\\\ \\sum_{k=1}^{${N}} a_k = ? \\end{gather*}`,
+    answer: ans,
+    type: 'seq',
+  };
 }
 
-// ─── Main API ──────────────────────────────────────────────────────
-
-// [Type 4] Definite Integration (CSAT Polynomials)
+// [3] Definite Integration
 function generateType4Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
   let a = 0, b = 0, ans = 0;
   for (let attempts = 0; attempts < 50; attempts++) {
-    a = Math.floor(rng() * 3) + 1; // 1 to 3
-    b = Math.floor(rng() * 4) + 1; // 1 to 4
+    a = Math.floor(rng() * 3) + 1;
+    b = Math.floor(rng() * 4) + 1;
     ans = a * a * a + b * a * a;
     if (ans > 0) break;
   }
@@ -344,59 +230,181 @@ function generateType4Question(rng: () => number): Omit<Question, 'id' | 'choice
   }
 }
 
-// [Type 5] Logarithm Properties
+// [4] Logarithm Properties
 function generateType5Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
   let base = [2, 3][Math.floor(rng() * 2)];
-  let ans = Math.floor(rng() * 4) + 2; // 2 to 5
+  let ans = Math.floor(rng() * 4) + 2;
   let p1 = Math.floor(rng() * (ans - 1)) + 1;
   let p2 = ans - p1;
   let b = Math.pow(base, p1);
   let c = Math.pow(base, p2);
 
-  const isSub = Math.floor(rng() * 2) === 0;
-  if (isSub) {
-    const sumAns = p1;
-    const p2_new = Math.floor(rng() * 3) + 1;
-    const p1_new = sumAns + p2_new;
-    b = Math.pow(base, p1_new);
-    c = Math.pow(base, p2_new);
-    return {
-      latex: `\\log_{${base}} ${b} - \\log_{${base}} ${c} = ?`,
-      answer: sumAns,
-      type: 'log'
-    };
-  } else {
-    return {
-      latex: `\\log_{${base}} ${b} + \\log_{${base}} ${c} = ?`,
-      answer: ans,
-      type: 'log'
-    };
+  return {
+    latex: `\\log_{${base}} ${b} + \\log_{${base}} ${c} = ?`,
+    answer: ans,
+    type: 'log'
+  };
+}
+
+// [5] NEW: Trigonometry Basic (Trig sum of special angles)
+function generateTrigBasicQuestion(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  const terms = [
+    { tex: '\\sin\\frac{\\pi}{6}', val: 0.5 },
+    { tex: '\\cos\\frac{\\pi}{3}', val: 0.5 },
+    { tex: '\\tan\\frac{\\pi}{4}', val: 1 },
+    { tex: '\\cos 0', val: 1 },
+    { tex: '\\sin\\frac{\\pi}{2}', val: 1 }
+  ];
+  let ans = 0;
+  let latex = '';
+  for (let attempts = 0; attempts < 50; attempts++) {
+    const t1 = terms[Math.floor(rng() * terms.length)];
+    const t2 = terms[Math.floor(rng() * terms.length)];
+    const c1 = t1.val === 0.5 ? (Math.floor(rng() * 4) + 1) * 2 : Math.floor(rng() * 4) + 1;
+    const c2 = t2.val === 0.5 ? (Math.floor(rng() * 4) + 1) * 2 : Math.floor(rng() * 4) + 1;
+
+    const op = rng() > 0.5 ? '+' : '-';
+    ans = op === '+' ? (c1 * t1.val + c2 * t2.val) : (c1 * t1.val - c2 * t2.val);
+
+    if (ans > 0 && Number.isInteger(ans)) {
+      const c1Str = c1 === 1 ? '' : c1;
+      const c2Str = c2 === 1 ? '' : c2;
+      latex = `${c1Str}${t1.tex} ${op} ${c2Str}${t2.tex} = ?`;
+      break;
+    }
   }
+  return { latex, answer: ans, type: 'trig_basic' };
+}
+
+// [6] NEW: Limits Basic (0/0 factorization)
+function generateLimitBasicQuestion(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  const a = Math.floor(rng() * 4) + 1; // 1 to 4
+  const b = Math.floor(rng() * 5) + 1; // 1 to 5
+
+  const B = b - a;
+  const C = -a * b;
+
+  const B_str = B === 0 ? '' : (B > 0 ? `+ ${B === 1 ? '' : B}x` : `- ${Math.abs(B) === 1 ? '' : Math.abs(B)}x`);
+  const C_str = C === 0 ? '' : (C > 0 ? `+ ${C}` : `- ${Math.abs(C)}`);
+
+  const num_str = `x^2 ${B_str} ${C_str}`;
+
+  return {
+    latex: `\\lim_{x \\to ${a}} \\frac{${num_str}}{x - ${a}} = ?`,
+    answer: a + b,
+    type: 'limit_basic'
+  };
+}
+
+// [7] NEW: Continuity
+function generateContinuityQuestion(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  let A = 0, B = 0, c = 0, K = 0;
+  for (let i = 0; i < 50; i++) {
+    A = Math.floor(rng() * 3) + 1;
+    B = Math.floor(rng() * 5) + 1;
+    c = Math.floor(rng() * 3) + 1;
+    K = A * c + B - c * c;
+    if (K > 0) break;
+  }
+  if (K <= 0) { A = 2; B = 3; c = 1; K = 4; }
+
+  const latex = `\\text{함수 } f(x) = \\begin{cases} ${A === 1 ? '' : A}x + ${B} & (x < ${c}) \\\\ x^2 + k & (x \\ge ${c}) \\end{cases} \\\\ \\text{가 실수 전체에서 연속일 때, } k = ?`;
+  return { latex, answer: K, type: 'continuity' };
+}
+
+// [8] NEW: Sigma Formulas
+function generateSigmaBasicQuestion(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  const N = Math.floor(rng() * 3) + 4; // 4 to 6
+  const A = Math.floor(rng() * 2) + 1; // 1 to 2
+  const B = Math.floor(rng() * 3) + 1; // 1 to 3
+
+  const sumK = (N * (N + 1)) / 2;
+  const ans = A * sumK + B * N;
+
+  const Astr = A === 1 ? '' : A;
+  const latex = `\\sum_{k=1}^{${N}} (${Astr}k + ${B}) = ?`;
+  return { latex, answer: ans, type: 'sigma_basic' };
+}
+
+// [9] NEW: Extrema
+function generateExtremaQuestion(rng: () => number): Omit<Question, 'id' | 'choices'> {
+  const pairs = [
+    [1, 3], [1, 5], [3, 5], [2, 4], [2, 6]
+  ];
+  const pair = pairs[Math.floor(rng() * pairs.length)];
+  const A = pair[0];
+  const B = pair[1]; // local min at larger root
+  const C = Math.floor(rng() * 10) + 1;
+
+  const coef2 = (3 * (A + B)) / 2;
+  const coef1 = 3 * A * B;
+
+  const funcStr = `x^3 - ${coef2}x^2 + ${coef1}x + ${C}`;
+  const latex = `\\text{함수 } f(x) = ${funcStr} \\text{ 가} \\\\ x=a \\text{ 에서 극솟값을 가질 때, } a = ?`;
+
+  return { latex, answer: B, type: 'extrema' };
 }
 
 // ─── Main API ──────────────────────────────────────────────────────
 
-export type QType = 'exp' | 'diff' | 'seq' | 'int' | 'log';
+export type QType = 'exp' | 'diff' | 'seq' | 'int' | 'log' | 'trig_basic' | 'limit_basic' | 'continuity' | 'sigma_basic' | 'extrema';
 
-const generators = [generateType1Question, generateType2Question, generateType3Question, generateType4Question, generateType5Question];
+const generators = [
+  generateType1Question,       // 0: exp
+  generateType2Question,       // 1: diff
+  generateType3Question,       // 2: seq
+  generateType4Question,       // 3: int
+  generateType5Question,       // 4: log
+  generateTrigBasicQuestion,   // 5: trig_basic
+  generateLimitBasicQuestion,  // 6: limit_basic
+  generateContinuityQuestion,  // 7: continuity
+  generateSigmaBasicQuestion,  // 8: sigma_basic
+  generateExtremaQuestion      // 9: extrema
+];
 
-export function generateQuestion(seed: string, index: number = 0, level: number = 1): Question {
-  // Create unique seed for each question index
+export function generateQuestion(seed: string, index: number = 0, level: number = 1, allowedTypes?: QType[]): Question {
   const combinedSeed = hashSeed(`${seed}-${index}`);
   const rng = mulberry32(combinedSeed);
 
-  // Limit generators based on level
-  let availableGenerators = [generators[0]];
-  if (level === 2) availableGenerators = [generators[0], generators[1]];
-  else if (level === 3) availableGenerators = [generators[1], generators[2], generators[3]];
-  else if (level === 4) availableGenerators = [generators[2], generators[3], generators[4]];
-  else if (level >= 5) availableGenerators = [generators[3], generators[4]];
+  // Progressive difficulty scaling with smoother curve
+  let availableGenerators: ((rng: () => number) => Omit<Question, 'id' | 'choices'>)[] = [];
 
-  // Select question type
+  if (allowedTypes && allowedTypes.length > 0) {
+    const typeToIndexMap: Record<QType, number> = {
+      'exp': 0,
+      'diff': 1,
+      'seq': 2,
+      'int': 3,
+      'log': 4,
+      'trig_basic': 5,
+      'limit_basic': 6,
+      'continuity': 7,
+      'sigma_basic': 8,
+      'extrema': 9
+    };
+    availableGenerators = allowedTypes.map(t => generators[typeToIndexMap[t]]);
+  } else {
+    if (level === 1) {
+      // Level 1: exp, log, trig_basic, limit_basic
+      availableGenerators = [generators[0], generators[4], generators[5], generators[6]];
+    } else if (level === 2) {
+      // Level 2: + diff, continuity
+      availableGenerators = [generators[0], generators[4], generators[5], generators[6], generators[1], generators[7]];
+    } else if (level === 3) {
+      // Level 3: + sigma_basic, seq (drop easiest ones to increase challenge)
+      availableGenerators = [generators[5], generators[6], generators[1], generators[7], generators[8], generators[2]];
+    } else if (level === 4) {
+      // Level 4: + int, extrema
+      availableGenerators = [generators[1], generators[7], generators[8], generators[2], generators[3], generators[9]];
+    } else {
+      // Level 5 (Max): Full variety, all types unlocked
+      availableGenerators = generators; // all 10
+    }
+  }
+
   let typeIndex = 0;
   let partial: Omit<Question, 'id' | 'choices'> | null = null;
 
-  // Retry loop to ensure answer is an integer and positive.
   for (let attempts = 0; attempts < 50; attempts++) {
     typeIndex = Math.floor(rng() * availableGenerators.length);
     partial = availableGenerators[typeIndex](rng);
@@ -406,12 +414,10 @@ export function generateQuestion(seed: string, index: number = 0, level: number 
     }
   }
 
-  // Fallback if somehow failed to get valid question
   if (!partial || !Number.isInteger(partial.answer) || partial.answer <= 0) {
     partial = { latex: "2 + 3 = ?", answer: 5, type: 'exp' };
   }
 
-  // Generate sorted choices matching CSAT style
   const allChoices = generateCSATChoices(partial.answer, rng, partial.type);
 
   return {
@@ -421,15 +427,16 @@ export function generateQuestion(seed: string, index: number = 0, level: number 
   };
 }
 
-// Generate a batch of questions
 export function generateQuestionBatch(
   seed: string,
   count: number
 ): Question[] {
   const questions: Question[] = [];
   for (let i = 0; i < count; i++) {
-    questions.push(generateQuestion(seed, i));
+    // Generate questions matching level logic (assuming level starts scaling later)
+    // Actually, batch is just generating standard questions from start. Level scaling is handled locally inside game component based on current combo.
+    questions.push(generateQuestion(seed, i, 1)); // We can't know level here unless passed. So we won't use this batch method effectively in game. 
+    // The game calls generateQuestion individually with a specific level.
   }
   return questions;
 }
-

@@ -1,7 +1,8 @@
 /**
- * Leaderboard store — Vercel Blob with in-memory fallback
+ * Leaderboard store — Vercel KV (Redis), Vercel Blob, with in-memory fallback
  */
 import { put } from '@vercel/blob';
+import Redis from 'ioredis';
 
 interface LeaderboardEntry {
     userId: string;
@@ -113,20 +114,87 @@ class BlobLeaderboard {
     }
 }
 
+// ─── Redis (Vercel KV) Leaderboard ─────────────────────────────────
+
+const REDIS_KEY = 'leaderboard:suneung1';
+
+class RedisLeaderboard {
+    private redis: Redis;
+
+    constructor(url: string) {
+        this.redis = new Redis(url);
+    }
+
+    async addScore(userId: string, score: number): Promise<void> {
+        // ZADD NX or simply ZADD? We only want to update if the new score is higher.
+        // ZADD CH keeps existing, GT updates if greater. ioredis supports native arguments.
+        // ZADD key GT score member
+        try {
+            await this.redis.zadd(REDIS_KEY, 'GT', score, userId);
+        } catch (e) {
+            console.error('[Leaderboard] Redis zadd error:', e);
+        }
+    }
+
+    async getTopScores(count: number): Promise<LeaderboardEntry[]> {
+        try {
+            // ZREVRANGE returns array of members, WITHSCORES returns [member1, score1, member2, score2]
+            const result = await this.redis.zrevrange(REDIS_KEY, 0, count - 1, 'WITHSCORES');
+            const entries: LeaderboardEntry[] = [];
+            for (let i = 0; i < result.length; i += 2) {
+                entries.push({
+                    userId: result[i],
+                    score: parseInt(result[i + 1], 10)
+                });
+            }
+            return entries;
+        } catch (e) {
+            console.error('[Leaderboard] Redis getTopScores error:', e);
+            return [];
+        }
+    }
+
+    async getRank(userId: string): Promise<number | null> {
+        try {
+            // ZREVRANK is 0-indexed, so add 1
+            const rank = await this.redis.zrevrank(REDIS_KEY, userId);
+            return rank !== null ? rank + 1 : null;
+        } catch (e) {
+            console.error('[Leaderboard] Redis getRank error:', e);
+            return null;
+        }
+    }
+
+    async getScore(userId: string): Promise<number | null> {
+        try {
+            const score = await this.redis.zscore(REDIS_KEY, userId);
+            return score !== null ? parseInt(score, 10) : null;
+        } catch (e) {
+            console.error('[Leaderboard] Redis getScore error:', e);
+            return null;
+        }
+    }
+}
+
 // ─── Singleton Export ──────────────────────────────────────────────
 
-export type Leaderboard = InMemoryLeaderboard | BlobLeaderboard;
+export type Leaderboard = InMemoryLeaderboard | BlobLeaderboard | RedisLeaderboard;
 
 let leaderboard: Leaderboard | null = null;
 
 export async function getLeaderboard(): Promise<Leaderboard> {
     if (leaderboard) return leaderboard;
 
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
+
+    if (redisUrl) {
+        leaderboard = new RedisLeaderboard(redisUrl);
+        console.log('[Leaderboard] Using Redis (Vercel KV)');
+    } else if (process.env.BLOB_READ_WRITE_TOKEN) {
         leaderboard = new BlobLeaderboard();
         console.log('[Leaderboard] Using Vercel Blob');
     } else {
-        console.log('[Leaderboard] WARN: No BLOB_READ_WRITE_TOKEN, using in-memory');
+        console.log('[Leaderboard] WARN: No KV_URL or BLOB_READ_WRITE_TOKEN, using in-memory');
         leaderboard = new InMemoryLeaderboard();
     }
 

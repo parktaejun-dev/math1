@@ -20,6 +20,11 @@ export default function HomePage() {
   const [showNotice, setShowNotice] = useState(false);
   const audioPlayed = useRef(false);
 
+  // Stats State
+  const [personalBest, setPersonalBest] = useState<number>(0);
+  const [history, setHistory] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<string[]>([]);
+
   const handleNoticeToggle = () => {
     const next = !showNotice;
     setShowNotice(next);
@@ -43,6 +48,17 @@ export default function HomePage() {
 
     setSchool(localStorage.getItem('suneung1_school') || '');
     setName(localStorage.getItem('suneung1_name') || '');
+
+    // Load Stats
+    setPersonalBest(parseInt(localStorage.getItem('suneung1_pb') || '0', 10));
+    try {
+      const hist = JSON.parse(localStorage.getItem('suneung1_history') || '[]');
+      setHistory(Array.isArray(hist) ? hist : []);
+    } catch (e) { setHistory([]); }
+    try {
+      const ach = JSON.parse(localStorage.getItem('suneung1_achievements') || '[]');
+      setAchievements(Array.isArray(ach) ? ach : []);
+    } catch (e) { setAchievements([]); }
   }, []);
 
   const handleStart = () => {
@@ -151,13 +167,21 @@ export default function HomePage() {
               </div>
             </div>
 
-            <button onClick={handleStart} className="group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full md:w-auto block text-center">
-              <div className="flex items-center justify-center space-x-3">
-                <span className="font-serif font-bold text-2xl tracking-widest">시험 시작</span>
-                <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
-              </div>
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+              <button onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+                <div className="flex items-center justify-center space-x-3">
+                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">시험 시작</span>
+                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
+                </div>
+              </button>
 
+              <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center">
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">연습 모드</span>
+                  <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">menu_book</span>
+                </div>
+              </button>
+            </div>
             <div className="w-full border-t border-b border-black py-4">
               <div className="grid grid-cols-4 divide-x divide-gray-400 text-center font-serif text-sm">
                 <div className="px-2 flex flex-col items-center gap-1">
@@ -179,6 +203,48 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* PB & Achievements Section */}
+          {(personalBest > 0 || history.length > 0) && (
+            <div className="w-full max-w-2xl mt-4">
+              <div className="flex items-center gap-2 mb-2 border-b border-black w-full pb-1">
+                <span className="bg-slate-800 text-white px-2 py-0.5 text-xs font-serif font-bold rounded-sm">내 기록</span>
+                <h3 className="font-serif font-bold text-base">개인 성적표</h3>
+              </div>
+              <div className="border border-slate-300 bg-white p-6 rounded-sm shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6 pb-2">
+                <div className="flex flex-col border-b sm:border-b-0 sm:border-r border-slate-200 pb-4 sm:pb-0 sm:pr-6">
+                  <div className="text-xs font-serif text-slate-500 mb-1">최고 표점 (Personal Best)</div>
+                  <div className="text-3xl font-black text-primary font-handwriting">{personalBest.toLocaleString()}</div>
+
+                  <div className="text-xs font-serif text-slate-500 mt-4 mb-1">최근 정답률</div>
+                  <div className="text-xl font-bold text-slate-800">
+                    {history.length > 0
+                      ? Math.round(history.slice(0, 5).reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / Math.min(5, history.length)) + '%'
+                      : '-'}
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="text-xs font-serif text-slate-500 mb-2">획득한 업적 (배지)</div>
+                  <div className="flex flex-wrap gap-2">
+                    {achievements.length === 0 ? (
+                      <span className="text-sm text-slate-400 font-serif">아직 획득한 업적이 없습니다.</span>
+                    ) : (
+                      <>
+                        {achievements.includes('COMBO_10') && <div className="px-2 py-1 bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold rounded shadow-sm">🔥 10콤보</div>}
+                        {achievements.includes('COMBO_20') && <div className="px-2 py-1 bg-orange-100 border border-orange-300 text-orange-800 text-[10px] font-bold rounded shadow-sm">⚡ 20콤보</div>}
+                        {achievements.includes('COMBO_30') && <div className="px-2 py-1 bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold rounded shadow-sm">🌟 30콤보</div>}
+                        {achievements.includes('COMBO_50') && <div className="px-2 py-1 bg-purple-100 border border-purple-300 text-purple-800 text-[10px] font-bold rounded shadow-sm">💎 50콤보</div>}
+                        {achievements.includes('SCORE_10K') && <div className="px-2 py-1 bg-blue-100 border border-blue-300 text-blue-800 text-[10px] font-bold rounded shadow-sm">🎯 1만점 돌파</div>}
+                        {achievements.includes('SCORE_30K') && <div className="px-2 py-1 bg-indigo-100 border border-indigo-300 text-indigo-800 text-[10px] font-bold rounded shadow-sm">🏆 3만점 돌파</div>}
+                        {achievements.includes('PERFECT_10') && <div className="px-2 py-1 bg-green-100 border border-green-300 text-green-800 text-[10px] font-bold rounded shadow-sm">💯 퍼펙트(10문제+)</div>}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="w-full max-w-2xl mt-8">
             <div className="flex items-center gap-2 mb-2 border-b border-black w-full pb-1">
