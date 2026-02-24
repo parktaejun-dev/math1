@@ -115,7 +115,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
         if (navigator.vibrate) navigator.vibrate(50);
 
         const newIsFever = newCombo >= COMBO_FEVER_THRESHOLD;
-        let nextLevel = Math.max(currentLevel, Math.floor(newCombo / 10) + 1);
+        const nextLevel = Math.max(currentLevel, Math.floor(newCombo / 10) + 1);
 
         if (nextLevel > currentLevel) {
             setShowLevelUp(true);
@@ -248,6 +248,17 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                 </div>
             </header>
 
+            {milestoneText && (
+                <div className="w-full px-4 pt-2 flex justify-center flex-shrink-0 pointer-events-none">
+                    <div
+                        className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-slate-900 font-black text-sm sm:text-base px-5 py-2 rounded-xl shadow-md border border-amber-400"
+                        style={{ animation: 'milestonePop 2s ease-out forwards' }}
+                    >
+                        {milestoneText}
+                    </div>
+                </div>
+            )}
+
             {/* Main Area */}
             <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
 
@@ -273,17 +284,6 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                             <svg width="200" height="200" viewBox="0 0 100 100">
                                 <path d="M 20,80 L 80,20" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray="85" strokeDashoffset="85" style={{ animation: 'drawSlash 0.3s ease-out forwards' }} />
                             </svg>
-                        </div>
-                    </div>
-                )}
-
-                {milestoneText && (
-                    <div className="absolute inset-x-0 top-4 flex justify-center z-50 pointer-events-none">
-                        <div
-                            className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-slate-900 font-black text-xl px-8 py-3 rounded-2xl shadow-lg border-2 border-amber-500"
-                            style={{ animation: 'milestonePop 2s ease-out forwards' }}
-                        >
-                            {milestoneText}
                         </div>
                     </div>
                 )}
