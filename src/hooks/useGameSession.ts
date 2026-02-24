@@ -26,6 +26,7 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
     const [currentLevel, setCurrentLevel] = useState(1);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const isSubmittingRef = useRef(false);
 
     const playedQuestionsRef = useRef<PlayedQuestion[]>([]);
     const questionStartTimeRef = useRef<number>(Date.now());
@@ -45,13 +46,15 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
         const q = generateFnRef.current(seed, index, level, allowedTypes);
         setCurrentQuestion(q);
         questionStartTimeRef.current = Date.now();
+        isSubmittingRef.current = false;
         setFeedback(null);
         setSelectedAnswer(null);
         setIsProcessing(false);
     }, [seed, allowedTypes]);
 
     const submitAnswer = useCallback((selected: number) => {
-        if (!currentQuestion || feedback || isProcessing) return;
+        if (!currentQuestion || feedback || isProcessing || isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
         setIsProcessing(true);
         setSelectedAnswer(selected);
 
@@ -87,7 +90,8 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
     }, [currentIndex, currentLevel, loadQuestion]);
 
     const submitPass = useCallback(() => {
-        if (!currentQuestion || feedback || isProcessing) return;
+        if (!currentQuestion || feedback || isProcessing || isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
         setIsProcessing(true);
         setSelectedAnswer(-1); // -1 to indicate PASS
 

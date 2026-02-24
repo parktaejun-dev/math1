@@ -163,14 +163,20 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
 
         const timePenalty = isPass ? 10 : 5 + Math.floor(combo / 10) * 2;
         const scorePenalty = isPass ? 0 : Math.min(500, combo * 20); // No score deduction for PASS over combo break
+        const nextTimeLeft = Math.max(0, timeLeft - timePenalty);
 
         setIsFever(false);
         addTime(-timePenalty);
-        setTimeLeft(prev => Math.max(0, prev)); // minimum 0
         if (scorePenalty > 0) {
             setScore(prev => Math.max(0, prev - scorePenalty));
         }
         playTimeLoss();
+
+        if (nextTimeLeft <= 0) {
+            setTimeLeft(0);
+            handleGameOver();
+            return;
+        }
 
         setTimeout(() => {
             // Note: level persists — no reset on miss
