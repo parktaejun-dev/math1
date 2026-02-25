@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { playSchoolBell, isSoundEnabled, toggleSound } from '@/lib/sound';
 
 interface LeaderboardEntry {
@@ -11,8 +12,10 @@ interface LeaderboardEntry {
 
 export default function HomePage() {
   const router = useRouter();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [suneungLeaderboard, setSuneungLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [middleLeaderboard, setMiddleLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'suneung' | 'middle'>('suneung');
 
   const [school, setSchool] = useState('');
   const [name, setName] = useState('');
@@ -38,10 +41,13 @@ export default function HomePage() {
   useEffect(() => {
     setSoundOn(isSoundEnabled());
 
-    fetch('/api/leaderboard')
-      .then((r) => r.json())
-      .then((data) => {
-        setLeaderboard(data.leaderboard || []);
+    Promise.all([
+      fetch('/api/leaderboard').then(r => r.json().catch(() => ({}))),
+      fetch('/api/leaderboard/middle').then(r => r.json().catch(() => ({})))
+    ])
+      .then(([suneungData, middleData]) => {
+        setSuneungLeaderboard(suneungData.leaderboard || []);
+        setMiddleLeaderboard(middleData.leaderboard || []);
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
@@ -190,13 +196,23 @@ export default function HomePage() {
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
                 </div>
               </button>
+            </div>
 
+            {/* Middle School Modes Mode */}
+            <div className="mt-8 flex flex-col md:flex-row items-center gap-4 w-full border-t border-slate-200 pt-8">
               <button onClick={handleMiddleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">중등 아케이드</span>
-                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">stadia_controller</span>
+                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">bolt</span>
                 </div>
               </button>
+
+              <Link href="/middle/practice" className="flex-1 w-full md:w-auto">
+                <button className="flex items-center justify-center space-x-2 px-6 py-4 rounded-md shadow-sm bg-amber-50 text-amber-600 hover:bg-amber-100 hover:shadow-md transition-all duration-300 w-full">
+                  <span className="font-bold whitespace-nowrap">중등 연습 모드</span>
+                  <span className="material-symbols-outlined text-xl">menu_book</span>
+                </button>
+              </Link>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -271,12 +287,31 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="w-full max-w-2xl mt-8">
+          <div className="w-full mt-8">
             <div className="flex items-center gap-2 mb-2 border-b border-black w-full pb-1">
               <span className="bg-black text-white px-2 py-0.5 text-xs font-serif font-bold rounded-sm">참고</span>
               <h3 className="font-serif font-bold text-base">실시간 성적 우수자 현황</h3>
             </div>
-            <div className="border border-gray-300 bg-gray-50 p-6 rounded-sm">
+
+            {/* Tabs */}
+            <div className="flex w-full mb-4 border-b border-slate-300">
+              <button
+                onClick={() => setActiveTab('suneung')}
+                className={`flex-1 py-3 text-sm font-bold font-serif transition-colors relative ${activeTab === 'suneung' ? 'text-navy-official' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                수능 실전
+                {activeTab === 'suneung' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-navy-official" />}
+              </button>
+              <button
+                onClick={() => setActiveTab('middle')}
+                className={`flex-1 py-3 text-sm font-bold font-serif transition-colors relative ${activeTab === 'middle' ? 'text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                중등 아케이드
+                {activeTab === 'middle' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-600" />}
+              </button>
+            </div>
+
+            <div className="border border-gray-300 bg-gray-50 p-6 rounded-sm min-h-[150px]">
               {isLoading ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-16 h-16 border-2 border-gray-300 rounded-full flex items-center justify-center bg-white">
@@ -284,7 +319,7 @@ export default function HomePage() {
                   </div>
                   <p className="font-serif font-bold text-gray-800">로딩 중...</p>
                 </div>
-              ) : leaderboard.length === 0 ? (
+              ) : (activeTab === 'suneung' ? suneungLeaderboard : middleLeaderboard).length === 0 ? (
                 <div className="flex flex-col items-center gap-3 text-center">
                   <div className="w-16 h-16 border-2 border-gray-300 rounded-full flex items-center justify-center bg-white">
                     <span className="material-symbols-outlined text-4xl text-gray-300">person_off</span>
@@ -297,7 +332,7 @@ export default function HomePage() {
               ) : (
                 <div className="w-full">
                   <div className="divide-y divide-gray-200">
-                    {leaderboard.slice(0, 10).map((entry, i) => (
+                    {(activeTab === 'suneung' ? suneungLeaderboard : middleLeaderboard).slice(0, 10).map((entry, i) => (
                       <div key={entry.userId} className="flex justify-between items-center py-3">
                         <div className="flex items-center gap-4">
                           <span className={`font-serif font-bold text-lg w-6 text-center ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-700' : 'text-gray-500'}`}>{i + 1}</span>

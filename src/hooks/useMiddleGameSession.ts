@@ -13,11 +13,12 @@ export interface MiddlePlayedQuestion {
 
 interface UseMiddleGameSessionProps {
     seed: string;
+    allowedTypes?: CognitiveType[];
     onCorrect?: (combo: number, timeMs: number) => void;
     onWrong?: (timeMs: number, isPass?: boolean) => void;
 }
 
-export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGameSessionProps) {
+export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, onCorrect, onWrong }: UseMiddleGameSessionProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentQuestion, setCurrentQuestion] = useState<MiddleQuestion | null>(null);
     const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -54,15 +55,16 @@ export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGame
         if (!generateFnRef.current) return;
 
         const history = generatedHistoryRef.current;
-        let allowedTypes: CognitiveType[] | undefined = undefined;
+        let allowedTypes: CognitiveType[] | undefined = globalAllowedTypes;
 
         // Apply Rhythm Protection & Variety limits
-        if (isFever) {
+        if (isFever && (!globalAllowedTypes || (globalAllowedTypes.includes('reflex') || globalAllowedTypes.includes('pattern')))) {
             // Fever -> Level 5 reflex types only
             allowedTypes = ['reflex', 'pattern'];
-        } else if (isRecovery) {
-            // Recovery after wrong answer -> Easy types
-            allowedTypes = ['reflex', 'pattern'];
+        } else if (isRecovery && (!globalAllowedTypes || (globalAllowedTypes.includes('reflex') || globalAllowedTypes.includes('pattern')))) {
+            // Recovery after wrong answer -> Easy types if permitted
+            allowedTypes = globalAllowedTypes ? globalAllowedTypes.filter(t => t === 'reflex' || t === 'pattern') : ['reflex', 'pattern'];
+            if (allowedTypes && allowedTypes.length === 0) allowedTypes = globalAllowedTypes; // Fallback to whatever they selected
         } else if (history.length > 0) {
             const lastQ = history[history.length - 1];
             const rngValue = determineRhythmRng(seed, index);
@@ -81,7 +83,7 @@ export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGame
             const countsCog = recent3Cog.reduce((acc, val) => { acc[val] = (acc[val] || 0) + 1; return acc; }, {} as Record<string, number>);
             const bannedCog: CognitiveType[] = Object.keys(countsCog).filter(k => countsCog[k] >= 2) as CognitiveType[];
 
-            const allCogs: CognitiveType[] = ['reflex', 'pattern', 'compute', 'think'];
+            const allCogs: CognitiveType[] = globalAllowedTypes || ['reflex', 'pattern', 'compute', 'think'];
             allowedTypes = allCogs.filter(c => {
                 if (restrictThink && c === 'think') return false;
                 if (bannedCog.includes(c)) return false;
@@ -89,7 +91,7 @@ export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGame
             });
 
             // Failsafe
-            if (allowedTypes.length === 0) allowedTypes = ['reflex'];
+            if (allowedTypes.length === 0) allowedTypes = globalAllowedTypes || ['reflex'];
         }
 
         // Generate the question
@@ -139,9 +141,32 @@ export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGame
         } else {
             setFeedback('wrong');
             setCombo(0);
-            onWrong?.(timeMs);
+            onWrong?.(timeMs, false);
         }
     }, [currentQuestion, feedback, isProcessing, combo, onCorrect, onWrong]);
+
+    const submitPass = useCallback(() => {
+        if (!currentQuestion || feedback || isProcessing || isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
+        setIsProcessing(true);
+        setSelectedAnswer(-1); // Use -1 to denote pass
+
+        const timeMs = Date.now() - questionStartTimeRef.current;
+
+        playedQuestionsRef.current.push({
+            questionId: currentQuestion.id,
+            selectedAnswer: -1,
+            correct: false,
+            timeMs,
+            level: currentQuestion.level,
+            cognitiveType: currentQuestion.cognitiveType,
+            type: currentQuestion.type
+        });
+
+        setFeedback('wrong'); // Visual feedback for pass is often neutral/wrong
+        setCombo(0);
+        onWrong?.(timeMs, true); // true = isPass
+    }, [currentQuestion, feedback, isProcessing, onWrong]);
 
     const nextQuestion = useCallback((isFever: boolean = false, isRecovery: boolean = false) => {
         const nextIdx = currentIndex + 1;
@@ -162,6 +187,7 @@ export function useMiddleGameSession({ seed, onCorrect, onWrong }: UseMiddleGame
         playedQuestionsRef,
         loadQuestion,
         submitAnswer,
+        submitPass,
         nextQuestion,
     };
 }

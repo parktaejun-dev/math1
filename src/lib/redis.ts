@@ -46,7 +46,8 @@ class BlobLeaderboard {
     private blobPath: string;
 
     constructor(gameMode: string) {
-        this.blobPath = `leaderboard_${gameMode}.json`;
+        // Maintain backwards compatibility with original blob
+        this.blobPath = gameMode === 'suneung1' ? 'leaderboard.json' : `leaderboard_${gameMode}.json`;
     }
 
     private async getData(): Promise<Record<string, number>> {
