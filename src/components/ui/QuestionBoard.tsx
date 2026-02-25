@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Question } from '@/lib/MathGenerator';
+import GeometryCanvas from '@/components/GeometryCanvas';
 
 interface QuestionBoardProps {
     currentIndex: number;
@@ -70,17 +71,25 @@ export default function QuestionBoard({
         }
     };
 
-    // Render KaTeX safely (for pure math strings in the question itself)
-    const renderLatex = (latex: string) => {
+    // Render KaTeX safely or inject GeometryCanvas
+    const renderLatexOrSvg = (latex: string) => {
+        if (latex.includes('[SVG_')) {
+            return <GeometryCanvas latexParams={latex} />;
+        }
         try {
-            return {
-                __html: katex.renderToString(latex, {
-                    throwOnError: false,
-                    displayMode: true,
-                }),
-            };
+            return (
+                <div
+                    className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 overflow-x-auto [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900 pb-2"
+                    dangerouslySetInnerHTML={{
+                        __html: katex.renderToString(latex, {
+                            throwOnError: false,
+                            displayMode: true,
+                        })
+                    }}
+                />
+            );
         } catch {
-            return { __html: latex };
+            return <div dangerouslySetInnerHTML={{ __html: latex }} />;
         }
     };
 
@@ -90,10 +99,7 @@ export default function QuestionBoard({
                 <div className="flex gap-2 items-start">
                     <div className="text-xl font-black text-slate-900 leading-none mt-0.5 font-serif">{currentIndex + 1}.</div>
                     <div className="flex-1 flex flex-col">
-                        <div
-                            className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 overflow-x-auto [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900 pb-2"
-                            dangerouslySetInnerHTML={renderLatex(currentQuestion.latex)}
-                        />
+                        {renderLatexOrSvg(currentQuestion.latex)}
                     </div>
                     {currentLevel !== undefined && (
                         <div className="inline-block text-[11px] font-normal align-middle border border-slate-400 rounded-full px-1.5 py-0.5 ml-1 text-slate-600 leading-none whitespace-nowrap flex-shrink-0">

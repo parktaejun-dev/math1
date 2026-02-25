@@ -61,7 +61,7 @@ export default function HomePage() {
     } catch (e) { setAchievements([]); }
   }, []);
 
-  const handleStart = () => {
+    const handleStart = () => {
     let devId = localStorage.getItem('suneung1_deviceId');
     if (!devId) {
       devId = Math.random().toString(36).substring(2, 9);
@@ -75,6 +75,22 @@ export default function HomePage() {
     localStorage.setItem('suneung1_userId', `${finalSchool} ${finalName}#${devId}`);
 
     router.push('/play');
+  };
+
+  const handleMiddleStart = () => {
+    let devId = localStorage.getItem('suneung1_deviceId');
+    if (!devId) {
+      devId = Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('suneung1_deviceId', devId);
+    }
+    const finalSchool = school.trim() || '소속없음';
+    const finalName = name.trim() || '수험생';
+
+    localStorage.setItem('suneung1_school', finalSchool);
+    localStorage.setItem('suneung1_name', finalName);
+    localStorage.setItem('suneung1_userId', `${finalSchool} ${finalName}#${devId}`);
+
+    router.push('/middle/play');
   };
 
   return (
@@ -168,16 +184,25 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <button onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+              <button gap-4 w-full md:w-auto onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
-                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">시험 시작</span>
+                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">수능 실전</span>
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
                 </div>
               </button>
 
+              <button onClick={handleMiddleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+                <div className="flex items-center justify-center space-x-3">
+                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">중등 아케이드</span>
+                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">stadia_controller</span>
+                </div>
+              </button>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
               <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-2">
-                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">연습 모드</span>
+                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">수능 연습 모드</span>
                   <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">menu_book</span>
                 </div>
               </button>

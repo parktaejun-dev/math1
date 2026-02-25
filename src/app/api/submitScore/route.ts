@@ -49,26 +49,30 @@ export async function POST(request: NextRequest) {
         let maxPossibleScore = 0;
         let verifiedCorrect = 0;
 
+        const gameMode = body.gameMode || 'suneung1';
+
         for (let i = 0; i < questionCount; i++) {
             const played = playedQuestions[i];
-            // Accept the level the client used for this question (defaults to 1)
-            const level = played.level || 1;
-            const q = generateQuestion(seed, i, level);
 
-            if (played.questionId !== q.id) {
-                return NextResponse.json(
-                    { error: 'Question sequence mismatch' },
-                    { status: 403 }
-                );
+            if (gameMode !== 'middle') {
+                // Suneung mode strict replay verification
+                const level = played.level || 1;
+                const q = generateQuestion(seed, i, level);
+
+                if (played.questionId !== q.id) {
+                    return NextResponse.json(
+                        { error: 'Question sequence mismatch' },
+                        { status: 403 }
+                    );
+                }
             }
 
             // Calculate max possible score (with combo/fever)
-            // Base: 100 per correct, fever doubles
             if (played.correct) {
                 verifiedCorrect++;
             }
             // Max score assumes all correct with fever and huge time bonus
-            maxPossibleScore += 6000; // theoretical generous max per question (3x multiplier + milestone)
+            maxPossibleScore += 6000;
         }
 
         // 6. Score plausibility check
@@ -87,7 +91,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 7. Persist to leaderboard
-        const leaderboard = await getLeaderboard();
+        const leaderboard = await getLeaderboard(gameMode);
         await leaderboard.addScore(userId, score);
 
         const rank = await leaderboard.getRank(userId);
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
             success: true,
             score,
             rank,
-            message: `Score ${score} submitted successfully`,
+            message: `Score ${score} submitted successfully to ${gameMode}`,
         });
     } catch (e: any) {
         console.error('[submitScore] Error:', e);
