@@ -74,44 +74,104 @@ export default function MiddlePracticeGame({ seed, allowedTypes, onQuit }: Middl
     };
 
     if (gameState === 'result') {
+        const accuracy = currentIndex > 0 ? Math.round((correctCount / currentIndex) * 100) : 0;
+        let gradeText = "Keep trying!";
+        if (accuracy >= 90) gradeText = "Excellent!";
+        else if (accuracy >= 70) gradeText = "Great Job!";
+        else if (accuracy >= 50) gradeText = "Good Effort!";
+
         return (
-            <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased items-center justify-center p-4">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-slideUp">
-                    <div className="bg-amber-600 p-6 text-center">
-                        <h2 className="text-2xl font-bold tracking-tight text-white mb-1">중등 연습 결과</h2>
-                        <div className="text-white/80 text-sm font-medium">수고하셨습니다!</div>
+            <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 flex flex-col font-sans antialiased overflow-x-hidden selection:bg-amber-600/20 selection:text-amber-600">
+                <header className="w-full bg-white border-b border-[#e0e2e5] px-6 py-3 flex items-center justify-between shadow-sm z-10 print:hidden">
+                    <div className="flex items-center gap-3 text-[#111318]">
+                        <span className="material-symbols-outlined text-amber-600 text-2xl">exercise</span>
+                        <h2 className="text-[#111318] text-lg font-bold tracking-tight">중등 연습 결과</h2>
                     </div>
-                    <div className="p-8">
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
-                                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">푼 문제</div>
-                                <div className="text-3xl font-black text-slate-800">{currentIndex}</div>
-                            </div>
-                            <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
-                                <div className="text-[11px] font-bold text-green-600 uppercase tracking-wider mb-1">정답 수</div>
-                                <div className="text-3xl font-black text-green-700">{correctCount}</div>
-                            </div>
-                            <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
-                                <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">정답률</div>
-                                <div className="text-3xl font-black text-blue-700">
-                                    {currentIndex > 0 ? Math.round((correctCount / currentIndex) * 100) : 0}%
+                </header>
+
+                <main className="flex-grow flex items-center justify-center p-4 sm:p-8">
+                    <div className="relative w-full max-w-[800px] min-h-[600px] bg-paper shadow-2xl flex flex-col overflow-hidden animate-slideUp before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E')] before:pointer-events-none">
+
+                        <div className="border-b-2 border-slate-800 p-6 sm:p-8 pb-4 mx-4 sm:mx-8 mt-4 sm:mt-8 flex flex-col gap-2">
+                            <div className="flex justify-between items-end">
+                                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight font-serif">성적 통지표</h1>
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-bold text-slate-600 font-serif">중등수학</p>
+                                    <div className="border border-slate-800 rounded-full px-4 py-1 mt-1 inline-block bg-white/50">
+                                        <span className="font-bold text-lg font-serif text-amber-700">연습형</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="bg-amber-50 rounded-xl p-4 text-center border border-amber-100">
-                                <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">진행 시간</div>
-                                <div className="text-3xl font-black text-amber-700 font-mono tracking-tighter">{formatTime(elapsedTime)}</div>
+                            <div className="flex justify-between text-sm font-medium text-slate-500 mt-4 font-serif border-t border-slate-300 pt-2">
+                                <span>연습 시간: {formatTime(elapsedTime)}</span>
                             </div>
                         </div>
 
-                        <button
-                            onClick={onQuit}
-                            className="w-full h-14 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-slate-800 transition-colors active:translate-y-0.5"
-                        >
-                            메인으로 돌아가기
-                        </button>
+                        <div className="flex-1 px-4 sm:px-8 py-8 flex flex-col items-center relative">
+                            <div className="w-full max-w-lg relative z-0 mt-4">
+                                <div className="relative w-full aspect-square max-w-[300px] mx-auto flex items-center justify-center">
+                                    <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                                        <svg className="w-full h-full text-amber-600 opacity-90 rotate-[-5deg]" viewBox="0 0 200 200">
+                                            <path
+                                                className="animate-draw"
+                                                d="M 40 100 C 40 40, 160 40, 160 100 C 160 160, 40 160, 40 100"
+                                                fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="8" style={{ filter: 'drop-shadow(2px 4px 6px rgba(217, 119, 6, 0.3))' }}
+                                            />
+                                            <path
+                                                className="animate-draw"
+                                                d="M 35 105 C 30 150, 150 170, 165 95"
+                                                fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="4" style={{ animationDelay: '0.8s', opacity: 0 }}
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="relative z-20 flex flex-col items-center justify-center" style={{ animation: 'inkFadeIn 0.8s ease-out 0.5s forwards', opacity: 0 }}>
+                                        <div className="text-[80px] sm:text-[100px] leading-none font-handwriting text-amber-600 drop-shadow-sm -rotate-2">
+                                            {accuracy}
+                                        </div>
+                                        <div className="text-2xl sm:text-3xl font-handwriting text-amber-600 mt-[-10px] -rotate-2 opacity-80">
+                                            {gradeText}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 border-t-2 border-slate-800 pt-6 grid grid-cols-3 gap-4 text-center">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">푼 문제</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-amber-600 -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 0.8s forwards', opacity: 0 }}>{currentIndex}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">정답 수</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-amber-600 -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 1.0s forwards', opacity: 0 }}>{correctCount}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">정답률</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-amber-600 -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 1.2s forwards', opacity: 0 }}>{accuracy}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto p-6 sm:p-8 border-t border-slate-200 bg-white/40 backdrop-blur-sm flex justify-center items-center">
+                            <button onClick={onQuit} className="group relative w-full sm:w-auto min-w-[200px] h-12 flex items-center justify-center bg-slate-900 border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden">
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">home</span>
+                                    메인으로 돌아가기
+                                </span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </main>
                 <style jsx global>{`
+                    @keyframes drawCircle {
+                        0% { stroke-dasharray: 1000; stroke-dashoffset: 1000; opacity: 0; }
+                        10% { opacity: 1; }
+                        100% { stroke-dasharray: 1000; stroke-dashoffset: 0; opacity: 1; }
+                    }
+                    @keyframes inkFadeIn {
+                        0% { opacity: 0; transform: scale(0.95) rotate(-2deg); }
+                        100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+                    }
+                    .animate-draw { animation: drawCircle 1.2s ease-out forwards; }
                     @keyframes slideUp {
                         from { transform: translateY(20px); opacity: 0; }
                         to { transform: translateY(0); opacity: 1; }

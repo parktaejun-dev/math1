@@ -175,28 +175,36 @@ export default function MiddlePlayPage() {
 
     if (gameState === 'submitting' || gameState === 'result') {
         const accuracy = result?.total ? Math.round((result.correct / result.total) * 100) : 0;
-        let gradeText = "E (노력 요함)";
-        if (accuracy >= 90) gradeText = "A (우수)";
-        else if (accuracy >= 80) gradeText = "B (보통이상)";
-        else if (accuracy >= 70) gradeText = "C (보통)";
-        else if (accuracy >= 60) gradeText = "D (미흡)";
+        let gradeText = "Keep trying!";
+        if (accuracy >= 90) gradeText = "Excellent!";
+        else if (accuracy >= 70) gradeText = "Great Job!";
+        else if (accuracy >= 50) gradeText = "Good Effort!";
 
         return (
-            <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 flex flex-col font-sans antialiased">
+            <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 flex flex-col font-sans antialiased overflow-x-hidden selection:bg-primary/20 selection:text-primary">
                 <header className="w-full bg-white border-b border-[#e0e2e5] px-6 py-3 flex items-center justify-between shadow-sm z-10 print:hidden">
                     <div className="flex items-center gap-3 text-[#111318]">
                         <span className="material-symbols-outlined text-primary text-2xl">school</span>
-                        <h2 className="text-[#111318] text-lg font-bold tracking-tight">학업성취도 평가표</h2>
+                        <h2 className="text-[#111318] text-lg font-bold tracking-tight">중등수학 타임어택</h2>
                     </div>
                 </header>
 
-                <main className="flex-grow flex items-center justify-center p-4">
-                    <div ref={resultRef} className="w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden border border-slate-200">
-                        <div className="p-8 pb-4 flex flex-col gap-2 bg-slate-50 border-b border-slate-200">
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">성취도 결과</h1>
-                            <div className="flex justify-between text-sm font-medium text-slate-500 mt-2">
-                                <span>참여자: {session?.userId?.split('#')[0] || '익명'}</span>
-                                {rank && <span className="text-primary font-bold">학급 내 상위 {rank}위</span>}
+                <main className="flex-grow flex items-center justify-center p-4 sm:p-8">
+                    <div ref={resultRef} className="relative w-full max-w-[800px] min-h-[600px] bg-paper shadow-2xl flex flex-col overflow-hidden before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E')] before:pointer-events-none">
+
+                        <div className="border-b-2 border-slate-800 p-6 sm:p-8 pb-4 mx-4 sm:mx-8 mt-4 sm:mt-8 flex flex-col gap-2">
+                            <div className="flex justify-between items-end">
+                                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight font-serif">성적 통지표</h1>
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-bold text-slate-600 font-serif">중등수학</p>
+                                    <div className="border border-slate-800 rounded-full px-4 py-1 mt-1 inline-block bg-white/50">
+                                        <span className="font-bold text-lg font-serif">도전형</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex justify-between text-sm font-medium text-slate-500 mt-4 font-serif border-t border-slate-300 pt-2">
+                                <span>수험번호: {session?.userId?.split('#')[0] || '익명'}</span>
+                                {rank && <span className="text-primary font-bold">전국 상위 {rank}위</span>}
                             </div>
                             {submitError && (
                                 <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
@@ -205,37 +213,119 @@ export default function MiddlePlayPage() {
                             )}
                         </div>
 
-                        <div className="flex-1 px-8 py-8 flex flex-col items-center">
-                            <div className="text-7xl font-black text-slate-800 tracking-tighter mb-2">
-                                {result?.score.toLocaleString() || '0'}
-                            </div>
-                            <div className="text-2xl font-bold text-primary mb-8 px-4 py-1 bg-primary/10 rounded-full">
-                                등급: {gameState === 'submitting' ? '채점 중...' : gradeText}
-                            </div>
+                        <div className="flex-1 px-4 sm:px-8 py-8 flex flex-col items-center relative">
+                            <div className="w-full max-w-lg relative z-0 mt-4">
+                                <div className="relative w-full aspect-square max-w-[300px] mx-auto flex items-center justify-center">
+                                    <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                                        <svg className="w-full h-full text-grading-red opacity-90 rotate-[-5deg]" viewBox="0 0 200 200">
+                                            <path
+                                                className="animate-draw"
+                                                d="M 40 100 C 40 40, 160 40, 160 100 C 160 160, 40 160, 40 100"
+                                                fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="8" style={{ filter: 'drop-shadow(2px 4px 6px rgba(217, 48, 37, 0.3))' }}
+                                            />
+                                            <path
+                                                className="animate-draw"
+                                                d="M 35 105 C 30 150, 150 170, 165 95"
+                                                fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="4" style={{ animationDelay: '0.8s', opacity: 0 }}
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="relative z-20 flex flex-col items-center justify-center" style={{ animation: 'inkFadeIn 0.8s ease-out 0.5s forwards', opacity: 0 }}>
+                                        <div className="text-[80px] sm:text-[100px] leading-none font-handwriting text-grading-red drop-shadow-sm -rotate-2">
+                                            {result?.score.toLocaleString() || '0'}
+                                        </div>
+                                        <div className="text-2xl sm:text-3xl font-handwriting text-grading-red mt-[-10px] -rotate-2 opacity-80">
+                                            {gameState === 'submitting' ? '채점 중...' : gradeText}
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <div className="w-full grid grid-cols-3 gap-4 text-center border-t border-slate-100 pt-6">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">정답</span>
-                                    <span className="text-xl font-black text-slate-800">{result?.correct || 0}/{result?.total || 0}</span>
+                                <div className="mt-8 border-t-2 border-slate-800 pt-6 grid grid-cols-3 gap-4 text-center">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">정답/풀이</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-grading-red -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 0.8s forwards', opacity: 0 }}>{result?.correct || 0}/{result?.total || 0}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">정답률</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-grading-red -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 1.0s forwards', opacity: 0 }}>{accuracy}%</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-slate-500 font-serif text-[10px] sm:text-xs uppercase tracking-widest">최대 콤보</span>
+                                        <span className="font-handwriting text-2xl sm:text-3xl text-grading-red -rotate-1" style={{ animation: 'inkFadeIn 0.8s ease-out 1.2s forwards', opacity: 0 }}>{result?.maxCombo || 0}</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">정답률</span>
-                                    <span className="text-xl font-black text-slate-800">{accuracy}%</span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">최대 콤보</span>
-                                    <span className="text-xl font-black text-slate-800">{result?.maxCombo || 0}</span>
-                                </div>
+
+                                {gameState === 'submitting' && (
+                                    <div className="mt-8 flex items-center justify-center gap-2 text-secondary text-sm font-medium font-serif">
+                                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        교육과정평가원 서버로 전송 중...
+                                    </div>
+                                )}
+
+                                {/* OMR Review Section */}
+                                {gameState === 'result' && result?.playedQuestions && (
+                                    <div className="mt-8 pt-6 border-t border-slate-300 w-full mb-8" style={{ animation: 'inkFadeIn 0.8s ease-out 1.5s forwards', opacity: 0 }}>
+                                        <h3 className="font-serif font-bold text-slate-700 mb-3 text-center sm:text-left">문항별 채점 결과</h3>
+                                        <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                            {result.playedQuestions.map((q, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-bold shadow-sm ${q.correct ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-grading-red text-grading-red'
+                                                        }`}
+                                                >
+                                                    {i + 1}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
-                            <button onClick={() => window.location.reload()} disabled={gameState === 'submitting'} className="flex-1 h-12 bg-white border border-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-colors">재응시</button>
-                            <button onClick={handleShare} disabled={gameState === 'submitting'} className="flex-1 h-12 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">공유하기</button>
-                            <a href="/" className="flex-none h-12 px-6 flex items-center justify-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">메인</a>
+                        <div className="mt-auto p-6 sm:p-8 border-t border-slate-200 bg-white/40 backdrop-blur-sm flex flex-col sm:flex-row gap-3 justify-center items-center">
+                            <button onClick={() => window.location.reload()} disabled={gameState === 'submitting'} className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-white border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden disabled:opacity-50">
+                                <div className="absolute inset-0 bg-slate-100 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-slate-900 font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">refresh</span>
+                                    재응시
+                                </span>
+                            </button>
+                            <button onClick={handleShare} disabled={gameState === 'submitting'} className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-primary border border-primary rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden disabled:opacity-50">
+                                <div className="absolute inset-0 bg-blue-700 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">share</span>
+                                    결과 공유
+                                </span>
+                            </button>
+                            <button onClick={handleDownloadImage} disabled={gameState === 'submitting' || isSharing} className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-emerald-600 border border-emerald-600 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden disabled:opacity-50">
+                                <div className="absolute inset-0 bg-emerald-700 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">download</span>
+                                    이미지 저장
+                                </span>
+                            </button>
+                            <a href="/" className="group relative w-full sm:w-auto min-w-[160px] h-12 flex items-center justify-center bg-slate-900 border border-slate-900 rounded shadow-sm hover:shadow-md transition-all active:translate-y-0.5 overflow-hidden">
+                                <div className="absolute inset-0 bg-slate-800 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2 font-bold text-white font-serif">
+                                    <span className="material-symbols-outlined text-[20px]">home</span>
+                                    메인으로
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </main>
+                <style jsx global>{`
+                    @keyframes drawCircle {
+                        0% { stroke-dasharray: 1000; stroke-dashoffset: 1000; opacity: 0; }
+                        10% { opacity: 1; }
+                        100% { stroke-dasharray: 1000; stroke-dashoffset: 0; opacity: 1; }
+                    }
+                    @keyframes inkFadeIn {
+                        0% { opacity: 0; transform: scale(0.95) rotate(-2deg); }
+                        100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+                    }
+                    .animate-draw { animation: drawCircle 1.2s ease-out forwards; }
+                `}</style>
             </div>
         );
     }
