@@ -121,19 +121,20 @@ function generateCognitiveDistractors(answer: number, rng: () => number, type: s
         [distractorArray[i], distractorArray[j]] = [distractorArray[j], distractorArray[i]];
     }
 
-    // Pick top up to 4
+    // Pick top up to targetDistractorCount
+    const targetDistractorCount = ['quadrant', 'irrational', 'inequality'].includes(type) ? 3 : 4;
     const selectedDistractors = new Set<number>();
-    for (let i = 0; i < distractorArray.length && selectedDistractors.size < 4; i++) {
+    for (let i = 0; i < distractorArray.length && selectedDistractors.size < targetDistractorCount; i++) {
         selectedDistractors.add(distractorArray[i]);
     }
 
     // Fill remaining if needed with sequential offsets
     let offset = 1;
-    while (selectedDistractors.size < 4) {
+    while (selectedDistractors.size < targetDistractorCount) {
         const candidate1 = answer + offset;
         const candidate2 = Math.max(1, answer - offset); // Avoid 0 if possible, but fine if needed long term
         if (!selectedDistractors.has(candidate1) && candidate1 !== answer) selectedDistractors.add(candidate1);
-        if (selectedDistractors.size < 4 && !selectedDistractors.has(candidate2) && candidate2 !== answer) selectedDistractors.add(candidate2);
+        if (selectedDistractors.size < targetDistractorCount && !selectedDistractors.has(candidate2) && candidate2 !== answer) selectedDistractors.add(candidate2);
         offset++;
     }
 
