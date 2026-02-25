@@ -39,6 +39,10 @@ function hashSeed(seed: string): number {
 
 // Fixed choices array emphasizing Cognitive Distractors (Not just numerical proximity)
 function generateCognitiveDistractors(answer: number, rng: () => number, type: string): number[] {
+    if (type === 'finite_decimal') {
+        return [1, 2];
+    }
+
     const pool = new Set<number>();
 
     if (type === 'quadrant') {
