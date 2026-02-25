@@ -189,6 +189,7 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Suneung Modes */}
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
               <button onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
@@ -196,32 +197,30 @@ export default function HomePage() {
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
                 </div>
               </button>
-            </div>
 
-            {/* Middle School Modes Mode */}
-            <div className="mt-8 flex flex-col md:flex-row items-center gap-4 w-full border-t border-slate-200 pt-8">
-              <button onClick={handleMiddleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
-                <div className="flex items-center justify-center space-x-3">
-                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">중등 아케이드</span>
-                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">bolt</span>
-                </div>
-              </button>
-
-              <Link href="/middle/practice" className="flex-1 w-full md:w-auto">
-                <button className="flex items-center justify-center space-x-2 px-6 py-4 rounded-md shadow-sm bg-amber-50 text-amber-600 hover:bg-amber-100 hover:shadow-md transition-all duration-300 w-full">
-                  <span className="font-bold whitespace-nowrap">중등 연습 모드</span>
-                  <span className="material-symbols-outlined text-xl">menu_book</span>
-                </button>
-              </Link>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center">
-                <div className="flex items-center justify-center space-x-2">
+              <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center h-[72px]">
+                <div className="flex items-center justify-center space-x-2 h-full">
                   <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">수능 연습 모드</span>
                   <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">menu_book</span>
                 </div>
               </button>
+            </div>
+
+            {/* Middle School Modes */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full border-t border-slate-200 pt-8 md:w-auto">
+              <button onClick={handleMiddleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+                <div className="flex items-center justify-center space-x-3">
+                  <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">중등 실전</span>
+                  <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">bolt</span>
+                </div>
+              </button>
+
+              <Link href="/middle/practice" className="flex-1 w-full sm:w-auto block h-[72px]">
+                <button className="flex items-center justify-center space-x-2 px-6 py-4 rounded-md shadow-sm border-2 border-transparent bg-amber-50 text-amber-600 hover:bg-amber-100 hover:shadow-md transition-all duration-300 w-full h-full">
+                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">중등 연습 모드</span>
+                  <span className="material-symbols-outlined text-xl">menu_book</span>
+                </button>
+              </Link>
             </div>
             <div className="w-full border-t border-b border-black py-4">
               <div className="grid grid-cols-4 divide-x divide-gray-400 text-center font-serif text-sm">
@@ -306,7 +305,7 @@ export default function HomePage() {
                 onClick={() => setActiveTab('middle')}
                 className={`flex-1 py-3 text-sm font-bold font-serif transition-colors relative ${activeTab === 'middle' ? 'text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                중등 아케이드
+                중등 실전
                 {activeTab === 'middle' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-600" />}
               </button>
             </div>
