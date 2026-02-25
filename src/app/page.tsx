@@ -61,7 +61,7 @@ export default function HomePage() {
     } catch (e) { setAchievements([]); }
   }, []);
 
-    const handleStart = () => {
+  const handleStart = () => {
     let devId = localStorage.getItem('suneung1_deviceId');
     if (!devId) {
       devId = Math.random().toString(36).substring(2, 9);
@@ -184,7 +184,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <button gap-4 w-full md:w-auto onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+              <button onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">수능 실전</span>
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
@@ -198,7 +198,7 @@ export default function HomePage() {
                 </div>
               </button>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
               <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-2">
