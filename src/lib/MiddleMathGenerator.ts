@@ -154,7 +154,7 @@ function genQuadrant(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> 
     else if (x > 0 && y < 0) ans = 4;
 
     return {
-        latex: `\\text{점 } (${x}, ${y}) \\text{ 은 제 몇 사분면?}`,
+        latex: `\\text{점 } (${x}, ${y}) \\text{ 은} \\\\ \\text{제 몇 사분면?}`,
         answer: ans,
         type: 'quadrant',
         cognitiveType: 'reflex',
@@ -278,7 +278,7 @@ function genTriangleOuter(rng: () => number): Omit<MiddleQuestion, 'id' | 'choic
     const ans = a + b;
 
     return {
-        latex: `\\text{삼각형의 두 내각이 } ${a}^\\circ, ${b}^\\circ \\text{ 일 때, 나머지 한 내각의 외각은?}`,
+        latex: `\\text{삼각형의 두 내각이 } ${a}^\\circ, ${b}^\\circ \\text{ 일 때,} \\\\ \\text{나머지 한 내각의 외각은?}`,
         answer: ans,
         type: 'triangle_outer',
         cognitiveType: 'geometry',
@@ -314,7 +314,7 @@ function genMeanMedian(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
     }
 
     return {
-        latex: `\\text{세 수 } ${arr[0]}, ${arr[1]}, ${arr[2]}\\text{ 의 ${typeStr}은?}`,
+        latex: `\\text{세 수 } ${arr[0]}, ${arr[1]}, ${arr[2]}\\text{ 의} \\\\ ${typeStr}\\text{은?}`,
         answer: ans,
         type: 'mean_median',
         cognitiveType: 'compute',
@@ -326,15 +326,15 @@ function genMeanMedian(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
 // [Level 4 - structure] Probability Fundamentals
 function genProbability(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
     const scenarios = [
-        { desc: `동전 1개와 주사위 1개를 던질 때 일어나는 모든 경우의 수`, ans: 2 * 6 },
-        { desc: `주사위 2개를 던질 때 눈의 합이 4가 되는 경우의 수`, ans: 3 }, // (1,3), (2,2), (3,1)
-        { desc: `A, B, C 세 사람을 일렬로 세우는 경우의 수`, ans: 6 }, // 3!
-        { desc: `4명 중 반장, 부반장을 각각 1명씩 뽑는 경우의 수`, ans: 12 } // 4*3
+        { desc: `\\text{동전 1개와 주사위 1개를 던질 때} \\\\ \\text{일어나는 모든 경우의 수?}`, ans: 2 * 6 },
+        { desc: `\\text{주사위 2개를 던질 때} \\\\ \\text{눈의 합이 4가 되는 경우의 수?}`, ans: 3 }, // (1,3), (2,2), (3,1)
+        { desc: `\\text{A, B, C 세 사람을} \\\\ \\text{일렬로 세우는 경우의 수?}`, ans: 6 }, // 3!
+        { desc: `\\text{4명 중 반장, 부반장을} \\\\ \\text{각각 1명씩 뽑는 경우의 수?}`, ans: 12 } // 4*3
     ];
     const scenario = scenarios[Math.floor(rng() * scenarios.length)];
 
     return {
-        latex: `\\text{${scenario.desc}?}`,
+        latex: scenario.desc,
         answer: scenario.ans,
         type: 'probability',
         cognitiveType: 'structure',
@@ -475,7 +475,7 @@ function genSequence(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> 
     }
 
     return {
-        latex: `\\text{다음 수열의 빈칸에 알맞은 수는?} \\quad ${a1}, ${a2}, ${a3}, \\square`,
+        latex: `\\text{다음 수열의 빈칸에 알맞은 수는?} \\\\ ${a1}, ${a2}, ${a3}, \\square`,
         answer: ans,
         type: 'sequence',
         cognitiveType: 'inference',
@@ -599,7 +599,7 @@ function genSimilarity(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
     const typeStr = isArea ? '넓이의 비' : '부피의 비';
 
     return {
-        latex: `\\text{닮음비가 } ${a}:${b} \\text{인 두 입체도형의 ${typeStr}가 } ${fromVal}:x \\text{ 일 때, } x\\text{는?}`,
+        latex: `\\text{닮음비가 } ${a}:${b} \\text{인 두 입체도형의} \\\\ \\text{${typeStr}가 } ${fromVal}:x \\text{ 일 때, } x\\text{는?}`,
         answer: ans,
         type: 'similarity',
         cognitiveType: 'geometry',
@@ -624,15 +624,15 @@ function genBacktrackBasic(rng: () => number): Omit<MiddleQuestion, 'id' | 'choi
     if (isMulFirst) {
         result = (x * mulVal) + addVal;
         const addStr = addVal > 0 ? `${addVal}을 더했더니` : `${Math.abs(addVal)}을 뺐더니`;
-        desc = `어떤 수에 ${mulVal}을 곱하고 ${addStr} ${result}이(가) 되었다. 어떤 수는?`;
+        desc = `\\text{어떤 수에 ${mulVal}을 곱하고} \\\\ \\text{${addStr} ${result}이(가) 되었다.} \\\\ \\text{어떤 수는?}`;
     } else {
         result = (x + addVal) * mulVal;
         const addStr = addVal > 0 ? `${addVal}을 더한 후` : `${Math.abs(addVal)}을 뺀 후`;
-        desc = `어떤 수에 ${addStr} ${mulVal}을 곱했더니 ${result}이(가) 되었다. 어떤 수는?`;
+        desc = `\\text{어떤 수에 ${addStr}} \\\\ \\text{${mulVal}을 곱했더니 ${result}이(가) 되었다.} \\\\ \\text{어떤 수는?}`;
     }
 
     return {
-        latex: `\\text{${desc}}`,
+        latex: desc,
         answer: x,
         type: 'backtrack_basic',
         cognitiveType: 'backtrack',
@@ -655,7 +655,7 @@ function genLogicalCondition(rng: () => number): Omit<MiddleQuestion, 'id' | 'ch
     }
 
     return {
-        latex: `\\text{${start}부터 ${end}까지의 자연수 중 짝수이면서 3의 배수인 수의 개수는?}`,
+        latex: `\\text{${start}부터 ${end}까지의 자연수 중} \\\\ \\text{짝수이면서 3의 배수인 수의 개수는?}`,
         answer: count,
         type: 'logical_condition',
         cognitiveType: 'logical',
