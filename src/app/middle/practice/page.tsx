@@ -7,9 +7,16 @@ import MiddlePracticeGame from '@/components/MiddlePracticeGame';
 
 const TOPICS: { id: CognitiveType; label: string; subject: string }[] = [
     { id: 'reflex', label: '기본 연산 / 직관적 사고', subject: '인지: 반사 연산' },
-    { id: 'pattern', label: '패턴 파악 / 지수 법칙', subject: '인지: 형태 파악' },
+    { id: 'sense', label: '비율 파악 / 소수 판별', subject: '인지: 수 감각' },
+    { id: 'pattern', label: '패턴 파악 / 분해', subject: '인지: 형태 파악' },
     { id: 'compute', label: '방정식 풀이 / 다항 연산', subject: '인지: 계산력' },
-    { id: 'think', label: '피타고라스 / 기울기', subject: '인지: 추론' }
+    { id: 'think', label: '이차방정식 / 근과 계수', subject: '인지: 깊은 생각' },
+    { id: 'geometry', label: '피타고라스 / 닮음 / 외각', subject: '인지: 시각 직관' },
+    { id: 'inference', label: '수열 규칙 찾기', subject: '인지: 규칙 추론' },
+    { id: 'structure', label: '경우의 수 / 확률', subject: '인지: 공간 카운팅' },
+    { id: 'judgment', label: '유/무리수 식별 / 부등식', subject: '인지: 조건 논리' },
+    { id: 'logical', label: '다중 조건 결합 탐색', subject: '인지: 논리 복합' },
+    { id: 'backtrack', label: '역산 / 결과에서 원인 찾기', subject: '인지: 역추적' }
 ];
 
 export default function MiddlePracticeSetupPage() {

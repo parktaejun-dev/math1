@@ -58,24 +58,28 @@ export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, o
         let allowedTypes: CognitiveType[] | undefined = globalAllowedTypes;
 
         // Apply Rhythm Protection & Variety limits
-        if (isFever && (!globalAllowedTypes || (globalAllowedTypes.includes('reflex') || globalAllowedTypes.includes('pattern')))) {
-            // Fever -> Level 5 reflex types only
-            allowedTypes = ['reflex', 'pattern'];
-        } else if (isRecovery && (!globalAllowedTypes || (globalAllowedTypes.includes('reflex') || globalAllowedTypes.includes('pattern')))) {
+        const softTypes: CognitiveType[] = ['reflex', 'sense', 'pattern', 'inference'];
+        const mediumTypes: CognitiveType[] = ['compute', 'backtrack'];
+        const hardTypes: CognitiveType[] = ['think', 'logical', 'geometry', 'judgment', 'structure'];
+
+        if (isFever && (!globalAllowedTypes || softTypes.some(t => globalAllowedTypes.includes(t)))) {
+            // Fever -> Fast/Soft types only
+            allowedTypes = softTypes;
+        } else if (isRecovery && (!globalAllowedTypes || softTypes.some(t => globalAllowedTypes.includes(t)))) {
             // Recovery after wrong answer -> Easy types if permitted
-            allowedTypes = globalAllowedTypes ? globalAllowedTypes.filter(t => t === 'reflex' || t === 'pattern') : ['reflex', 'pattern'];
+            allowedTypes = globalAllowedTypes ? globalAllowedTypes.filter(t => softTypes.includes(t)) : softTypes;
             if (allowedTypes && allowedTypes.length === 0) allowedTypes = globalAllowedTypes; // Fallback to whatever they selected
         } else if (history.length > 0) {
             const lastQ = history[history.length - 1];
             const rngValue = determineRhythmRng(seed, index);
 
             // 1. Hard-before-soft logic
-            let restrictThink = false;
-            if (lastQ.cognitiveType === 'think') {
-                restrictThink = true;
-            } else if (lastQ.cognitiveType === 'compute' && rngValue > 0.3) {
-                // 30% chance to allow 'think' after 'compute'
-                restrictThink = true;
+            let restrictHard = false;
+            if (hardTypes.includes(lastQ.cognitiveType as CognitiveType)) {
+                restrictHard = true;
+            } else if (mediumTypes.includes(lastQ.cognitiveType as CognitiveType) && rngValue > 0.3) {
+                // 30% chance to allow Hard after Medium
+                restrictHard = true;
             }
 
             // 2. Boredom Prevention
@@ -83,9 +87,9 @@ export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, o
             const countsCog = recent3Cog.reduce((acc, val) => { acc[val] = (acc[val] || 0) + 1; return acc; }, {} as Record<string, number>);
             const bannedCog: CognitiveType[] = Object.keys(countsCog).filter(k => countsCog[k] >= 2) as CognitiveType[];
 
-            const allCogs: CognitiveType[] = globalAllowedTypes || ['reflex', 'pattern', 'compute', 'think'];
+            const allCogs: CognitiveType[] = globalAllowedTypes || [...softTypes, ...mediumTypes, ...hardTypes];
             allowedTypes = allCogs.filter(c => {
-                if (restrictThink && c === 'think') return false;
+                if (restrictHard && hardTypes.includes(c)) return false;
                 if (bannedCog.includes(c)) return false;
                 return true;
             });
