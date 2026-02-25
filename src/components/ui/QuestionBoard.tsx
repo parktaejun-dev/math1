@@ -79,7 +79,7 @@ export default function QuestionBoard({
         try {
             return (
                 <div
-                    className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 overflow-x-auto [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900 pb-2"
+                    className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 break-keep break-words whitespace-pre-wrap [&_.katex-display]:!whitespace-normal [&_.katex-display]:!break-words [&_.katex-display]:!flex-wrap [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900 pb-2"
                     dangerouslySetInnerHTML={{
                         __html: katex.renderToString(latex, {
                             throwOnError: false,
@@ -94,9 +94,9 @@ export default function QuestionBoard({
     };
 
     return (
-        <div className="w-full flex-grow flex flex-col">
-            <div key={`question-${currentIndex}`} className={`flex flex-col gap-2 mb-4 slide-in ${feedback === 'wrong' ? 'animate-shake' : ''}`}>
-                <div className="flex gap-2 items-start">
+        <div className="w-full h-full flex flex-col">
+            <div key={`question-${currentIndex}`} className={`flex-1 overflow-y-auto pb-4 pr-1 scrollbar-hide slide-in ${feedback === 'wrong' ? 'animate-shake' : ''}`}>
+                <div className="flex gap-2 items-start mt-2">
                     <div className="text-xl font-black text-slate-900 leading-none mt-0.5 font-serif">{currentIndex + 1}.</div>
                     <div className="flex-1 flex flex-col">
                         {renderLatexOrSvg(currentQuestion.latex)}
@@ -109,7 +109,7 @@ export default function QuestionBoard({
                 </div>
             </div>
 
-            <div className="mt-auto pt-2">
+            <div className="flex-shrink-0 pt-2 border-t border-slate-100 bg-paper">
                 <div className="mb-4">
                     <button
                         onClick={handleToggleHint}
@@ -175,19 +175,19 @@ export default function QuestionBoard({
                         const isSelected = feedback !== null && selectedAnswer === choice;
                         const isWrongSelect = feedback === 'wrong' && isSelected;
 
-                        let containerClass = "flex items-center p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm";
-                        let circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 text-sm font-serif mr-3 text-slate-500 bg-white";
-                        let textClass = "text-base font-serif font-medium text-slate-800";
+                        let containerClass = "flex items-start p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm";
+                        let circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 text-sm font-serif mr-3 text-slate-500 bg-white mt-0.5";
+                        let textClass = "text-base font-serif font-medium text-slate-800 flex-1 break-keep break-words whitespace-pre-wrap";
 
                         if (feedback !== null) {
                             if (choice === currentQuestion.answer) {
-                                containerClass = "flex items-center p-3 rounded-lg border-2 border-green-500 bg-green-500/5 transition-all shadow-sm";
-                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-green-500 bg-white text-green-500 text-sm font-serif mr-3 shadow-sm";
-                                textClass = "text-base font-serif font-bold text-green-500";
+                                containerClass = "flex items-start p-3 rounded-lg border-2 border-green-500 bg-green-500/5 transition-all shadow-sm";
+                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-green-500 bg-white text-green-500 text-sm font-serif mr-3 shadow-sm mt-0.5";
+                                textClass = "text-base font-serif font-bold text-green-500 flex-1 break-keep break-words whitespace-pre-wrap";
                             } else if (isWrongSelect) {
-                                containerClass = "flex items-center p-3 rounded-lg border-2 border-grading-red bg-grading-red/5 transition-all opacity-80 shadow-sm";
-                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-grading-red bg-white text-grading-red text-sm font-serif mr-3 shadow-sm";
-                                textClass = "text-base font-serif font-bold text-grading-red line-through decoration-2";
+                                containerClass = "flex items-start p-3 rounded-lg border-2 border-grading-red bg-grading-red/5 transition-all opacity-80 shadow-sm";
+                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-grading-red bg-white text-grading-red text-sm font-serif mr-3 shadow-sm mt-0.5";
+                                textClass = "text-base font-serif font-bold text-grading-red line-through decoration-2 flex-1 break-keep break-words whitespace-pre-wrap";
                             } else {
                                 containerClass += " opacity-40";
                             }

@@ -537,10 +537,11 @@ function genIrrational(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
     const options = [...pickedWrongs, pickedCorrect].sort(() => rng() - 0.5);
     const ansIdx = options.indexOf(pickedCorrect) + 1; // 1-based Correct Choice
 
+    const circles = ['①', '②', '③', '④', '⑤'];
     let latex = `\\text{다음 중 ${isAskIrrational ? '무리수' : '유리수'}인 것은?} \\\\ `;
     options.forEach((opt, idx) => {
         const isLastInRow = idx % 2 === 1 || idx === options.length - 1;
-        latex += `(${idx + 1}) \\; ${opt} ${isLastInRow ? '\\\\' : '\\quad'} `;
+        latex += `\\text{${circles[idx]}} \\; ${opt} ${isLastInRow ? '\\\\' : '\\quad'} `;
     });
 
     return {
@@ -574,10 +575,11 @@ function genInequality(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
     const finalOptions = [...pickedWrongs, pickedCorrect].sort(() => rng() - 0.5);
     const ansIdx = finalOptions.indexOf(pickedCorrect) + 1;
 
+    const circles = ['①', '②', '③', '④', '⑤'];
     let latex = `a < b \\text{ 일 때, 다음 중 옳은 것은?} \\\\ `;
     finalOptions.forEach((opt, idx) => {
         const isLastInRow = idx % 2 === 1 || idx === finalOptions.length - 1;
-        latex += `(${idx + 1}) \\; ${opt.tex} ${isLastInRow ? '\\\\' : '\\quad'} `;
+        latex += `\\text{${circles[idx]}} \\; ${opt.tex} ${isLastInRow ? '\\\\' : '\\quad'} `;
     });
 
     return {
