@@ -534,7 +534,8 @@ function genIrrational(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
 
     let latex = `\\text{다음 중 ${isAskIrrational ? '무리수' : '유리수'}인 것은?} \\\\ `;
     options.forEach((opt, idx) => {
-        latex += `(${idx + 1}) \\; ${opt} \\quad `;
+        const isLastInRow = idx % 2 === 1 || idx === options.length - 1;
+        latex += `(${idx + 1}) \\; ${opt} ${isLastInRow ? '\\\\' : '\\quad'} `;
     });
 
     return {
@@ -570,7 +571,8 @@ function genInequality(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'
 
     let latex = `a < b \\text{ 일 때, 다음 중 옳은 것은?} \\\\ `;
     finalOptions.forEach((opt, idx) => {
-        latex += `(${idx + 1}) \\; ${opt.tex} \\quad `;
+        const isLastInRow = idx % 2 === 1 || idx === finalOptions.length - 1;
+        latex += `(${idx + 1}) \\; ${opt.tex} ${isLastInRow ? '\\\\' : '\\quad'} `;
     });
 
     return {
