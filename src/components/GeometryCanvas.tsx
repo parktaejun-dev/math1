@@ -15,6 +15,7 @@ interface GeometryCanvasProps {
  */
 export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
   const [htmlContent, setHtmlContent] = useState<string>('');
+  const [dimensions, setDimensions] = useState({ w: 280, h: 220 });
 
   // Ex: "[SVG_PYTHAGORAS:3,4,?]" -> type: "PYTHAGORAS", args: ["3", "4", "?"]
   const match = latexParams.match(/\[SVG_([A-Z_]+):(.*?)\]/);
@@ -26,6 +27,7 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
     const args = match[2].split(',');
 
     if (geomType === 'PYTHAGORAS' && args.length === 3) {
+      setDimensions({ w: 280, h: 220 });
       const latexA = katex.renderToString(args[0], { throwOnError: false });
       const latexB = katex.renderToString(args[1], { throwOnError: false });
       const latexC = katex.renderToString(args[2], { throwOnError: false });
@@ -37,13 +39,11 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
       if (!a && b && c) a = Math.sqrt(c * c - b * b);
       if (!b && a && c) b = Math.sqrt(c * c - a * a);
 
-      // Fallback proportions if parsing fails
       if (!a || !b) {
         a = 4;
         b = 3;
       }
 
-      // Max dimensions: width 200, height 150
       const scale = Math.min(200 / a, 150 / b);
       const renderedWidth = a * scale;
       const renderedHeight = b * scale;
@@ -53,7 +53,6 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
       const topY = rightY - renderedHeight;
       const leftX = rightX - renderedWidth;
 
-      // Position labels dynamically
       const labelA_X = leftX + renderedWidth / 2;
       const labelA_Y = rightY + 10;
 
@@ -64,8 +63,7 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
       const labelC_Y = topY + renderedHeight / 2 - 15;
 
       const svg = `
-        <div style="position: relative; width: 280px; height: 220px; margin: 0 auto;">
-          <svg viewBox="0 0 280 220" width="100%" height="100%" style="overflow: visible;">
+          <svg viewBox="0 0 280 220" width="280" height="220" style="overflow: visible; display: block;">
             <!-- Triangle -->
             <polygon points="${leftX},${rightY} ${rightX},${rightY} ${rightX},${topY}" fill="rgba(80, 160, 255, 0.1)" stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
             <!-- Right-angle marker -->
@@ -75,19 +73,16 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
           <div style="position: absolute; top: ${labelA_Y}px; left: ${labelA_X}px; transform: translateX(-50%); font-size: 1.2rem;">${latexA}</div>
           <div style="position: absolute; top: ${labelB_Y}px; left: ${labelB_X}px; transform: translateY(-50%); font-size: 1.2rem;">${latexB}</div>
           <div style="position: absolute; top: ${labelC_Y}px; left: ${labelC_X}px; transform: translate(-50%, -50%); font-size: 1.2rem; font-weight: bold; color: var(--color-primary-500, #3b82f6);">${latexC}</div>
-        </div>
       `;
       setHtmlContent(svg);
     }
     else if (geomType === 'INSCRIBED' && args.length === 2) {
+      setDimensions({ w: 280, h: 260 });
       const latexInscribed = katex.renderToString(`\\angle P = ${args[0] === '?' ? '?' : args[0] + '^\\circ'}`, { throwOnError: false });
       const latexCenter = katex.renderToString(`\\angle O = ${args[1] === '?' ? '?' : args[1] + '^\\circ'}`, { throwOnError: false });
 
-      // Fixed Circle (radius 100, center 140, 130 to allow more top space)
-      // Points: Center O(140,130), Inscribed P(140, 30), Arc points A(70, 190), B(210, 190)
       const svg = `
-        <div style="position: relative; width: 280px; height: 260px; margin: 0 auto;">
-          <svg viewBox="0 0 280 260" width="100%" height="100%" style="overflow: visible;">
+          <svg viewBox="0 0 280 260" width="280" height="260" style="overflow: visible; display: block;">
             <!-- Circle -->
             <circle cx="140" cy="130" r="100" fill="none" stroke="currentColor" stroke-width="3" />
             <!-- Center O Dot -->
@@ -103,22 +98,31 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
           </svg>
           <div style="position: absolute; top: -5px; left: 140px; transform: translateX(-50%); font-size: 1.1rem; color: #1f2937; padding: 2px 6px; background: rgba(255,255,255,0.8); border-radius: 4px;">${latexInscribed}</div>
           <div style="position: absolute; top: 160px; left: 140px; transform: translateX(-50%); font-size: 1.1rem; color: #1f2937;">${latexCenter}</div>
-        </div>
       `;
       setHtmlContent(svg);
     }
     else {
-      // Fallback if parsing fails
       setHtmlContent(`<div>Invalid Geometry Definition</div>`);
     }
-  }, [latexParams]);
+  }, [latexParams, match?.[1]]);
 
   if (!match) return null;
 
   return (
     <div
-      className="flex justify-center items-center p-4 bg-white/5 dark:bg-black/20 rounded-xl my-4 select-none pointer-events-none"
-      dangerouslySetInnerHTML={{ __html: htmlContent }}
-    />
+      className="w-full flex justify-center items-center py-2 sm:py-4 bg-white/5 dark:bg-black/20 rounded-xl my-2 sm:my-4 select-none pointer-events-none"
+      style={{ containerType: 'inline-size' } as any}
+    >
+      <div 
+        className="relative" 
+        style={{ 
+          width: `${dimensions.w}px`, 
+          height: `${dimensions.h}px`,
+          transform: `scale(min(1, 100cqw / ${dimensions.w}))`,
+          transformOrigin: 'center center'
+        } as any}
+        dangerouslySetInnerHTML={{ __html: htmlContent }} 
+      />
+    </div>
   );
 }

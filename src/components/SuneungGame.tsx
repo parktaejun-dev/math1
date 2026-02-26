@@ -266,7 +266,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
             )}
 
             {/* Main Area */}
-            <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
+            <main className="flex-grow flex flex-col p-3 sm:p-4 w-full max-w-md mx-auto overflow-hidden pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
 
                 <FeedbackOverlay
                     feedback={feedback}
