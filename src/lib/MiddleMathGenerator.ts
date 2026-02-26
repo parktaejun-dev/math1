@@ -900,10 +900,26 @@ export function generateMiddleQuestion(seed: string, index: number, allowedTypes
     }
 
     let partial: Omit<MiddleQuestion, 'id' | 'choices'> | null = null;
+
+    // Anti-repetition logic for Middle School questions
+    let prevType: string | null = null;
+    if (index > 0) {
+        const prevSeed = hashSeed(`${seed}-${index - 1}`);
+        const prevRng = mulberry32(prevSeed);
+        const prevTypeIdx = Math.floor(prevRng() * available.length);
+        const dummy = available[prevTypeIdx](prevRng);
+        prevType = dummy.type;
+    }
+
     for (let attempts = 0; attempts < 50; attempts++) {
         const typeIndex = Math.floor(rng() * available.length);
         partial = available[typeIndex](rng);
+        
         if (Number.isInteger(partial.answer) && !Number.isNaN(partial.answer)) {
+            // Avoid immediate repeat if possible
+            if (available.length > 1 && partial.type === prevType && attempts < 10) {
+                continue;
+            }
             break; // Safe math generated
         }
     }

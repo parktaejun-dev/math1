@@ -115,7 +115,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
         if (navigator.vibrate) navigator.vibrate(50);
 
         const newIsFever = newCombo >= COMBO_FEVER_THRESHOLD;
-        const nextLevel = Math.max(currentLevel, Math.floor(newCombo / 10) + 1);
+        const nextLevel = Math.max(currentLevel, Math.floor(newCombo / 5) + 1);
 
         if (nextLevel > currentLevel) {
             setShowLevelUp(true);

@@ -438,11 +438,38 @@ export function generateQuestion(seed: string, index: number = 0, level: number 
   let typeIndex = 0;
   let partial: Omit<Question, 'id' | 'choices'> | null = null;
 
+  // Anti-repetition: don't pick the same type as the immediate previous question
+  let prevType: string | null = null;
+  if (index > 0) {
+    const prevSeed = hashSeed(`${seed}-${index - 1}`);
+    const prevRng = mulberry32(prevSeed);
+    
+    // We need to re-evaluate what availableGenerators would have been for index-1
+    // For simplicity, we just simulate the selection process for index-1
+    // Note: level might have changed, but usually it's same or lower.
+    // This is an approximation but very effective for preventing immediate repeats.
+    const prevLevel = level; // Approximation
+    let prevAvailable: any[] = [];
+    if (level === 1) prevAvailable = [generators[0], generators[4], generators[5], generators[6]];
+    else if (level === 2) prevAvailable = [generators[0], generators[4], generators[5], generators[6], generators[1], generators[7]];
+    else if (level === 3) prevAvailable = [generators[5], generators[6], generators[1], generators[7], generators[8], generators[2]];
+    else if (level === 4) prevAvailable = [generators[1], generators[7], generators[8], generators[2], generators[3], generators[9]];
+    else prevAvailable = generators;
+
+    const prevTypeIdx = Math.floor(prevRng() * prevAvailable.length);
+    const dummy = prevAvailable[prevTypeIdx](prevRng);
+    prevType = dummy.type;
+  }
+
   for (let attempts = 0; attempts < 50; attempts++) {
     typeIndex = Math.floor(rng() * availableGenerators.length);
     partial = availableGenerators[typeIndex](rng);
 
     if (Number.isInteger(partial.answer) && partial.answer > 0) {
+      // If we have more than one type available, avoid the previous type
+      if (availableGenerators.length > 1 && partial.type === prevType && attempts < 10) {
+        continue;
+      }
       break;
     }
   }
