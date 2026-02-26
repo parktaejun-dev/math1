@@ -115,7 +115,7 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
         if (navigator.vibrate) navigator.vibrate(50);
 
         const newIsFever = newCombo >= COMBO_FEVER_THRESHOLD;
-        const nextLevel = Math.max(currentLevel, Math.floor(newCombo / 5) + 1);
+        const nextLevel = Math.max(currentLevel, Math.floor(newCombo / 10) + 1);
 
         if (nextLevel > currentLevel) {
             setShowLevelUp(true);
@@ -252,21 +252,22 @@ export default function SuneungGame({ seed, onGameEnd }: SuneungGameProps) {
                         </span>
                     )}
                 </div>
-            </header>
-
-            {milestoneText && (
-                <div className="w-full px-4 pt-2 flex justify-center flex-shrink-0 pointer-events-none">
-                    <div
-                        className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-slate-900 font-black text-sm sm:text-base px-5 py-2 rounded-xl shadow-md border border-amber-400"
-                        style={{ animation: 'milestonePop 2s ease-out forwards' }}
-                    >
-                        {milestoneText}
-                    </div>
-                </div>
-            )}
-
-            {/* Main Area */}
-            <main className="flex-grow flex flex-col p-3 sm:p-4 w-full max-w-md mx-auto overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))] relative">
+                        </header>
+            
+                        <div className="w-full h-12 flex-shrink-0 relative pointer-events-none z-20">
+                            {milestoneText && (
+                                <div className="absolute inset-0 flex justify-center items-start pt-2 px-4">
+                                    <div
+                                        className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-slate-900 font-black text-sm sm:text-base px-5 py-2 rounded-xl shadow-md border border-amber-400"
+                                        style={{ animation: 'milestonePop 2s ease-out forwards' }}
+                                    >
+                                        {milestoneText}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+            
+                        {/* Main Area */}            <main className="flex-grow flex flex-col p-3 sm:p-4 w-full max-w-md mx-auto overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))] relative">
 
                 <FeedbackOverlay
                     feedback={feedback}
