@@ -745,6 +745,113 @@ function genInscribedAngleSvg(rng: () => number): Omit<MiddleQuestion, 'id' | 'c
     };
 }
 
+// [Level 2 - reflex] Absolute Value
+function genAbsoluteValue(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const a = (Math.floor(rng() * 9) + 1) * (rng() > 0.5 ? 1 : -1);
+    const b = (Math.floor(rng() * 9) + 1) * (rng() > 0.5 ? 1 : -1);
+    const ans = Math.abs(a) + Math.abs(b);
+    return {
+        latex: `|${a}| + |${b}| = ?`,
+        answer: ans,
+        type: 'absolute_value',
+        cognitiveType: 'reflex',
+        level: 2,
+        hint: `절댓값은 부호를 떼고 먼저 계산합니다.`
+    };
+}
+
+// [Level 3 - think] System of Equations
+function genSystemEq(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const x = Math.floor(rng() * 5) + 1;
+    const y = Math.floor(rng() * 5) + 1;
+    const a = x + y;
+    const b = x - y;
+    const ans = x * y;
+    return {
+        latex: `\\begin{cases} x + y = ${a} \\\\ x - y = ${b} \\end{cases} \\\\ \\text{일 때, } xy\\text{ 의 값은?}`,
+        answer: ans,
+        type: 'system_eq',
+        cognitiveType: 'think',
+        level: 3,
+        hint: `두 식을 더하거나 빼서 x, y를 각각 구하세요.`
+    };
+}
+
+// [Level 2 - compute] Polynomial Value
+function genPolynomialValue(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const x = (Math.floor(rng() * 4) + 1) * (rng() > 0.5 ? 1 : -1);
+    const y = (Math.floor(rng() * 4) + 1) * (rng() > 0.5 ? 1 : -1);
+    const cx = Math.floor(rng() * 3) + 2;
+    const cy = Math.floor(rng() * 3) + 2;
+    const c = Math.floor(rng() * 5) + 1;
+    const ans = cx * x - cy * y + c;
+    return {
+        latex: `x = ${x}, y = ${y} \\text{ 일 때,} \\\\ ${cx}x - ${cy}y + ${c}\\text{ 의 값은?}`,
+        answer: ans,
+        type: 'polynomial_value',
+        cognitiveType: 'compute',
+        level: 2,
+        hint: `문자에 주어진 값을 괄호를 쳐서 대입하세요.`
+    };
+}
+
+// [Level 3 - geometry] Circle Sector
+function genCircleSector(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const types = [
+        { angle: 60, r: [3, 6, 9] },
+        { angle: 90, r: [2, 4, 6] },
+        { angle: 120, r: [3, 6, 9] },
+        { angle: 180, r: [2, 3, 4, 5] }
+    ];
+    const t = types[Math.floor(rng() * types.length)];
+    const r = t.r[Math.floor(rng() * t.r.length)];
+    const ans = Math.round(2 * r * (t.angle / 360));
+    return {
+        latex: `\\text{반지름이 } ${r}, \\text{ 중심각이 } ${t.angle}^\\circ\\text{인} \\\\ \\text{부채꼴 호의 길이는 } x\\pi\\text{ 이다. } x=?`,
+        answer: ans,
+        type: 'circle_sector',
+        cognitiveType: 'geometry',
+        level: 3,
+        hint: `호의 길이 = 2 * 파이 * 반지름 * (중심각 / 360)`
+    };
+}
+
+// [Level 4 - sense] Square Root Approx
+function genSquareRootApprox(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const bases = [3, 5, 6, 7, 10, 11, 14, 15, 20, 30, 40, 50, 60, 80];
+    const n = bases[Math.floor(rng() * bases.length)];
+    const ans = Math.floor(Math.sqrt(n));
+    return {
+        latex: `\\text{정수 } a\\text{에 대하여} \\\\ a < \\sqrt{${n}} < a+1\\text{ 일 때, } a=?`,
+        answer: ans,
+        type: 'sqrt_approx',
+        cognitiveType: 'sense',
+        level: 4,
+        hint: `루트 안의 수와 가장 가까운 완전제곱수를 찾으세요.`
+    };
+}
+
+// [Level 3 - pattern] Polynomial Expansion
+function genPolynomialExpansion(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const a = Math.floor(rng() * 4) + 1;
+    const b = (Math.floor(rng() * 4) + 1) * (rng() > 0.5 ? 1 : -1);
+    const c = Math.floor(rng() * 4) + 1;
+    const d = (Math.floor(rng() * 4) + 1) * (rng() > 0.5 ? 1 : -1);
+    const ans = a * d + b * c;
+    const bStr = b > 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+    const dStr = d > 0 ? `+ ${d}` : `- ${Math.abs(d)}`;
+    const axStr = a === 1 ? 'x' : `${a}x`;
+    const cxStr = c === 1 ? 'x' : `${c}x`;
+    return {
+        latex: `(${axStr} ${bStr})(${cxStr} ${dStr})\\text{ 전개식에서} \\\\ x\\text{의 계수는?}`,
+        answer: ans,
+        type: 'polynomial_expansion',
+        cognitiveType: 'pattern',
+        level: 3,
+        hint: `분배법칙을 이용하여 x가 나오는 항만 곱해서 더하세요.`
+    };
+}
+
 // ─── Main API ──────────────────────────────────────────────────────
 
 const generators = [
@@ -768,7 +875,13 @@ const generators = [
     genLogicalCondition,
     genPythagorasSvg,
     genSpecialAngleFever,
-    genInscribedAngleSvg
+    genInscribedAngleSvg,
+    genAbsoluteValue,
+    genSystemEq,
+    genPolynomialValue,
+    genCircleSector,
+    genSquareRootApprox,
+    genPolynomialExpansion
 ];
 
 export function generateMiddleQuestion(seed: string, index: number, allowedTypes?: CognitiveType[]): MiddleQuestion {
