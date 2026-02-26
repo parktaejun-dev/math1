@@ -206,7 +206,7 @@ export default function MiddleSchoolGame({ seed, onGameEnd }: MiddleSchoolGamePr
                 </Link>
                 <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-300 relative">
                     <span className={`material-symbols-outlined text-[16px] ${isUrgent ? 'text-grading-red' : 'text-primary'}`}>timer</span>
-                    <span className={`font-bold font-mono text-sm leading-none ${isUrgent ? 'text-grading-red animate-pulse' : 'text-primary'}`}>{Math.max(0, timeLeft).toFixed(1)}초</span>
+                    <span className={`font-bold font-mono text-sm leading-none ${isUrgent ? 'text-grading-red animate-pulse' : 'text-primary'}`}>{Math.ceil(Math.max(0, timeLeft))}초</span>
                     {timeDelta && (
                         <span
                             key={timeDelta.key}

@@ -96,9 +96,9 @@ export default function QuestionBoard({
     return (
         <div className="w-full h-full flex flex-col">
             <div key={`question-${currentIndex}`} className={`flex-1 overflow-y-auto pb-4 pr-1 scrollbar-hide slide-in ${feedback === 'wrong' ? 'animate-shake' : ''}`}>
-                <div className="flex gap-2 items-start mt-2">
-                    <div className="text-xl font-black text-slate-900 leading-none mt-0.5 font-serif">{currentIndex + 1}.</div>
-                    <div className="flex-1 flex flex-col">
+                <div className="flex gap-2 items-start mt-2 bg-white border border-slate-200 shadow-sm p-4 rounded-xl">
+                    <div className="text-xl font-black text-slate-900 leading-none mt-0.5 font-serif flex-shrink-0 w-6">{currentIndex + 1}.</div>
+                    <div className="flex-1 flex flex-col min-w-0">
                         {renderLatexOrSvg(currentQuestion.latex)}
                     </div>
                     {currentLevel !== undefined && (

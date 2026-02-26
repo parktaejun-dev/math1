@@ -42,12 +42,13 @@ function generateCognitiveDistractors(answer: number, rng: () => number, type: s
     if (type === 'finite_decimal') {
         return [1, 2];
     }
+    if (['quadrant', 'irrational', 'inequality'].includes(type)) {
+        return [1, 2, 3, 4];
+    }
 
     const pool = new Set<number>();
 
-    if (type === 'quadrant') {
-        [1, 2, 3, 4].forEach(v => { if (v !== answer) pool.add(v); });
-    } else if (type === 'sign_integer') {
+    if (type === 'sign_integer') {
         pool.add(-answer);
         const absAns = Math.abs(answer);
         pool.add(absAns + 2);
@@ -125,20 +126,19 @@ function generateCognitiveDistractors(answer: number, rng: () => number, type: s
         [distractorArray[i], distractorArray[j]] = [distractorArray[j], distractorArray[i]];
     }
 
-    // Pick top up to targetDistractorCount
-    const targetDistractorCount = ['quadrant', 'irrational', 'inequality'].includes(type) ? 3 : 4;
+    // Pick top up to 4
     const selectedDistractors = new Set<number>();
-    for (let i = 0; i < distractorArray.length && selectedDistractors.size < targetDistractorCount; i++) {
+    for (let i = 0; i < distractorArray.length && selectedDistractors.size < 4; i++) {
         selectedDistractors.add(distractorArray[i]);
     }
 
     // Fill remaining if needed with sequential offsets
     let offset = 1;
-    while (selectedDistractors.size < targetDistractorCount) {
+    while (selectedDistractors.size < 4) {
         const candidate1 = answer + offset;
         const candidate2 = Math.max(1, answer - offset); // Avoid 0 if possible, but fine if needed long term
         if (!selectedDistractors.has(candidate1) && candidate1 !== answer) selectedDistractors.add(candidate1);
-        if (selectedDistractors.size < targetDistractorCount && !selectedDistractors.has(candidate2) && candidate2 !== answer) selectedDistractors.add(candidate2);
+        if (selectedDistractors.size < 4 && !selectedDistractors.has(candidate2) && candidate2 !== answer) selectedDistractors.add(candidate2);
         offset++;
     }
 
@@ -170,8 +170,8 @@ function genQuadrant(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> 
 
 // [Level 1 - reflex] Sign Integer Addition
 function genSignInteger(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
-    const a = (Math.floor(rng() * 9) + 1) * (rng() > 0.5 ? 1 : -1);
-    const b = (Math.floor(rng() * 9) + 1) * (rng() > 0.5 ? 1 : -1);
+    const a = (Math.floor(rng() * 8) + 2) * (rng() > 0.5 ? 1 : -1);
+    const b = (Math.floor(rng() * 8) + 2) * (rng() > 0.5 ? 1 : -1);
     const ans = a + b;
 
     const bStr = b < 0 ? `(${b})` : `${b}`;
@@ -799,7 +799,7 @@ export function generateMiddleQuestion(seed: string, index: number, allowedTypes
 
     if (!partial) {
         // Failsafe
-        partial = { latex: "1 + 1 = ?", answer: 2, type: 'sign_integer', cognitiveType: 'reflex', level: 1 };
+        partial = { latex: "-3 + 8 = ?", answer: 5, type: 'sign_integer', cognitiveType: 'reflex', level: 1 };
     }
 
     const choices = generateCognitiveDistractors(partial.answer, rng, partial.type);
