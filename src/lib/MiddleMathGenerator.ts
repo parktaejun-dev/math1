@@ -749,7 +749,6 @@ function genInscribedAngleSvg(rng: () => number): Omit<MiddleQuestion, 'id' | 'c
 
 const generators = [
     genQuadrant,
-    genSignInteger,
     genExponentBasic,
     genLinearEq,
     genDivisorCount,
@@ -764,7 +763,6 @@ const generators = [
     genSequence,
     genProportion,
     genIrrational,
-    genInequality,
     genSimilarity,
     genBacktrackBasic,
     genLogicalCondition,
