@@ -10,14 +10,12 @@ interface GeometryCanvasProps {
 
 /**
  * Parses parameters and generates fixed SVG geometries.
- * The SVG shapes NEVER resize or animate to prevent cognitive stalls.
- * Only the text overlaid using KaTeX changes.
+ * Uses container queries to scale both width and height proportionally.
  */
 export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
   const [htmlContent, setHtmlContent] = useState<string>('');
   const [dimensions, setDimensions] = useState({ w: 280, h: 220 });
 
-  // Ex: "[SVG_PYTHAGORAS:3,4,?]" -> type: "PYTHAGORAS", args: ["3", "4", "?"]
   const match = latexParams.match(/\[SVG_([A-Z_]+):(.*?)\]/);
 
   useEffect(() => {
@@ -39,10 +37,7 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
       if (!a && b && c) a = Math.sqrt(c * c - b * b);
       if (!b && a && c) b = Math.sqrt(c * c - a * a);
 
-      if (!a || !b) {
-        a = 4;
-        b = 3;
-      }
+      if (!a || !b) { a = 4; b = 3; }
 
       const scale = Math.min(200 / a, 150 / b);
       const renderedWidth = a * scale;
@@ -55,21 +50,16 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
 
       const labelA_X = leftX + renderedWidth / 2;
       const labelA_Y = rightY + 10;
-
       const labelB_X = rightX + 10;
       const labelB_Y = rightY - renderedHeight / 2;
-
       const labelC_X = leftX + renderedWidth / 2 - 15;
       const labelC_Y = topY + renderedHeight / 2 - 15;
 
       const svg = `
           <svg viewBox="0 0 280 220" width="280" height="220" style="overflow: visible; display: block;">
-            <!-- Triangle -->
             <polygon points="${leftX},${rightY} ${rightX},${rightY} ${rightX},${topY}" fill="rgba(80, 160, 255, 0.1)" stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
-            <!-- Right-angle marker -->
             <polyline points="${rightX - 20},${rightY} ${rightX - 20},${rightY - 20} ${rightX},${rightY - 20}" fill="none" stroke="currentColor" stroke-width="2" />
           </svg>
-          <!-- Absolute KaTeX Overlays -->
           <div style="position: absolute; top: ${labelA_Y}px; left: ${labelA_X}px; transform: translateX(-50%); font-size: 1.2rem;">${latexA}</div>
           <div style="position: absolute; top: ${labelB_Y}px; left: ${labelB_X}px; transform: translateY(-50%); font-size: 1.2rem;">${latexB}</div>
           <div style="position: absolute; top: ${labelC_Y}px; left: ${labelC_X}px; transform: translate(-50%, -50%); font-size: 1.2rem; font-weight: bold; color: var(--color-primary-500, #3b82f6);">${latexC}</div>
@@ -83,16 +73,11 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
 
       const svg = `
           <svg viewBox="0 0 280 260" width="280" height="260" style="overflow: visible; display: block;">
-            <!-- Circle -->
             <circle cx="140" cy="130" r="100" fill="none" stroke="currentColor" stroke-width="3" />
-            <!-- Center O Dot -->
             <circle cx="140" cy="130" r="4" fill="currentColor" />
-            <!-- Lines -->
             <polyline points="140,30 60,190 140,130" fill="none" stroke="#6b7280" stroke-width="2" />
             <polyline points="140,30 220,190 140,130" fill="none" stroke="#6b7280" stroke-width="2" />
-            <!-- Base Arc Line (static abstraction) -->
             <line x1="60" y1="190" x2="220" y2="190" stroke="currentColor" stroke-dasharray="4" stroke-width="2" />
-            <!-- Arc markers -->
             <path d="M 130 60 A 30 30 0 0 0 150 60" fill="none" stroke="#f59e0b" stroke-width="2" />
             <path d="M 120 145 A 25 25 0 0 0 160 145" fill="none" stroke="#ef4444" stroke-width="2" />
           </svg>
@@ -108,21 +93,35 @@ export default function GeometryCanvas({ latexParams }: GeometryCanvasProps) {
 
   if (!match) return null;
 
+  // Calculate the ratio to maintain aspect ratio while scaling
+  const aspectRatio = dimensions.h / dimensions.w;
+
   return (
     <div
-      className="w-full flex justify-center items-center py-2 sm:py-4 bg-white/5 dark:bg-black/20 rounded-xl my-2 sm:my-4 select-none pointer-events-none"
+      className="w-full flex justify-center items-center py-1 sm:py-2 bg-white/5 dark:bg-black/20 rounded-xl my-1 sm:my-2 select-none pointer-events-none"
       style={{ containerType: 'inline-size' } as any}
     >
       <div 
         className="relative" 
         style={{ 
-          width: `${dimensions.w}px`, 
-          height: `${dimensions.h}px`,
-          transform: `scale(min(1, 100cqw / ${dimensions.w}))`,
-          transformOrigin: 'center center'
+          width: `min(100cqw, ${dimensions.w}px)`, 
+          height: `calc(min(100cqw, ${dimensions.w}px) * ${aspectRatio})`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         } as any}
-        dangerouslySetInnerHTML={{ __html: htmlContent }} 
-      />
+      >
+        <div 
+          style={{ 
+            width: `${dimensions.w}px`, 
+            height: `${dimensions.h}px`,
+            transform: `scale(calc(min(100cqw, ${dimensions.w}px) / ${dimensions.w}))`,
+            transformOrigin: 'center center',
+            position: 'absolute'
+          } as any}
+          dangerouslySetInnerHTML={{ __html: htmlContent }} 
+        />
+      </div>
     </div>
   );
 }

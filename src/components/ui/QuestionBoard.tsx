@@ -109,17 +109,17 @@ export default function QuestionBoard({
                 </div>
             </div>
 
-            <div className="flex-shrink-0 pt-2 border-t border-slate-100">
-                <div className="mb-4">
+            <div className="flex-shrink-0 pt-1.5 border-t border-slate-100">
+                <div className="mb-2">
                     <button
                         onClick={handleToggleHint}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer rounded-lg border border-slate-200"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer rounded-lg border border-slate-200"
                     >
-                        <span className="font-serif font-bold text-sm text-slate-700 tracking-wide flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[18px] text-amber-500">{aiMode ? "smart_toy" : "lightbulb"}</span>
+                        <span className="font-serif font-bold text-xs text-slate-700 tracking-wide flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[16px] text-amber-500">{aiMode ? "smart_toy" : "lightbulb"}</span>
                             {aiMode ? "AI 정답 해설 보기" : "Hint"}
                         </span>
-                        <span className={`text-slate-400 text-xs transition-transform duration-300 ${isHintOpen ? 'rotate-180' : ''}`}>▼</span>
+                        <span className={`text-slate-400 text-[10px] transition-transform duration-300 ${isHintOpen ? 'rotate-180' : ''}`}>▼</span>
                     </button>
                     <div
                         className={`transition-all duration-300 ease-in-out overflow-hidden ${isHintOpen ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
@@ -156,15 +156,15 @@ export default function QuestionBoard({
                 </div>
 
                 {onPass && (
-                    <div className="mb-6">
+                    <div className="mb-3">
                         <button
                             onClick={onPass}
                             disabled={feedback !== null || isProcessing}
-                            className="w-full px-4 py-3 bg-white text-slate-700 border-2 border-slate-300 border-dashed hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100 transition-all rounded-xl shadow-sm disabled:opacity-50 disabled:pointer-events-none flex flex-col items-center justify-center gap-0.5"
+                            className="w-full px-3 py-2 bg-white text-slate-700 border-2 border-slate-300 border-dashed hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100 transition-all rounded-xl shadow-sm disabled:opacity-50 disabled:pointer-events-none flex flex-col items-center justify-center gap-0"
                         >
-                            <span className="font-bold tracking-widest text-base">PASS</span>
+                            <span className="font-bold tracking-widest text-sm">PASS</span>
                             {passPenaltyText && (
-                                <span className="text-xs font-medium text-slate-500">{passPenaltyText}</span>
+                                <span className="text-[10px] font-medium text-slate-500">{passPenaltyText}</span>
                             )}
                         </button>
                     </div>
@@ -175,19 +175,19 @@ export default function QuestionBoard({
                         const isSelected = feedback !== null && selectedAnswer === choice;
                         const isWrongSelect = feedback === 'wrong' && isSelected;
 
-                        let containerClass = "flex items-start p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm";
-                        let circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 text-sm font-serif mr-3 text-slate-500 bg-white mt-0.5";
-                        let textClass = "text-base font-serif font-medium text-slate-800 flex-1 break-keep break-words whitespace-pre-wrap";
+                        let containerClass = "flex items-start p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm";
+                        let circleClass = "w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-300 text-xs font-serif mr-2.5 text-slate-500 bg-white mt-0.5";
+                        let textClass = "text-sm sm:text-base font-serif font-medium text-slate-800 flex-1 break-keep break-words whitespace-pre-wrap";
 
                         if (feedback !== null) {
                             if (choice === currentQuestion.answer) {
-                                containerClass = "flex items-start p-3 rounded-lg border-2 border-green-500 bg-green-500/5 transition-all shadow-sm";
-                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-green-500 bg-white text-green-500 text-sm font-serif mr-3 shadow-sm mt-0.5";
-                                textClass = "text-base font-serif font-bold text-green-500 flex-1 break-keep break-words whitespace-pre-wrap";
+                                containerClass = "flex items-start p-2.5 rounded-lg border-2 border-green-500 bg-green-500/5 transition-all shadow-sm";
+                                circleClass = "w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-green-500 bg-white text-green-500 text-xs font-serif mr-2.5 shadow-sm mt-0.5";
+                                textClass = "text-sm sm:text-base font-serif font-bold text-green-500 flex-1 break-keep break-words whitespace-pre-wrap";
                             } else if (isWrongSelect) {
-                                containerClass = "flex items-start p-3 rounded-lg border-2 border-grading-red bg-grading-red/5 transition-all opacity-80 shadow-sm";
-                                circleClass = "w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-grading-red bg-white text-grading-red text-sm font-serif mr-3 shadow-sm mt-0.5";
-                                textClass = "text-base font-serif font-bold text-grading-red line-through decoration-2 flex-1 break-keep break-words whitespace-pre-wrap";
+                                containerClass = "flex items-start p-2.5 rounded-lg border-2 border-grading-red bg-grading-red/5 transition-all opacity-80 shadow-sm";
+                                circleClass = "w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-grading-red bg-white text-grading-red text-xs font-serif mr-2.5 shadow-sm mt-0.5";
+                                textClass = "text-sm sm:text-base font-serif font-bold text-grading-red line-through decoration-2 flex-1 break-keep break-words whitespace-pre-wrap";
                             } else {
                                 containerClass += " opacity-40";
                             }
