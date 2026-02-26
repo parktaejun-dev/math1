@@ -167,7 +167,7 @@ export default function MiddleSchoolGame({ seed, onGameEnd }: MiddleSchoolGamePr
     }
 
     return (
-        <div className="bg-paper text-ink font-sans h-screen flex flex-col overflow-hidden select-none">
+        <div className="bg-paper text-ink font-sans flex flex-col overflow-hidden select-none" style={{ height: '100dvh' }}>
             {/* Top progress bar for time left */}
             <div className="w-full h-1 bg-slate-200 flex-shrink-0">
                 <div
@@ -220,7 +220,7 @@ export default function MiddleSchoolGame({ seed, onGameEnd }: MiddleSchoolGamePr
             </header>
 
             {/* Main Area */}
-            <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
+            <main className="flex-grow flex flex-col p-4 w-full max-w-md mx-auto overflow-hidden pb-[calc(6rem+env(safe-area-inset-bottom))] relative">
                 <FeedbackOverlay
                     feedback={feedback}
                     correctText={combo >= 10 ? "Fever!" : "정답"}
