@@ -45,6 +45,7 @@ export function useGameSession({ seed, allowedTypes, onCorrect, onWrong }: UseGa
         if (!generateFnRef.current) return;
         const q = generateFnRef.current(seed, index, level, allowedTypes);
         setCurrentQuestion(q);
+        setCurrentLevel(level);
         questionStartTimeRef.current = Date.now();
         isSubmittingRef.current = false;
         setFeedback(null);

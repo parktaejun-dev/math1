@@ -14,11 +14,15 @@ export interface MiddlePlayedQuestion {
 interface UseMiddleGameSessionProps {
     seed: string;
     allowedTypes?: CognitiveType[];
+    levelRange?: {
+        min: number;
+        max: number;
+    };
     onCorrect?: (combo: number, timeMs: number) => void;
     onWrong?: (timeMs: number, isPass?: boolean) => void;
 }
 
-export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, onCorrect, onWrong }: UseMiddleGameSessionProps) {
+export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, levelRange, onCorrect, onWrong }: UseMiddleGameSessionProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentQuestion, setCurrentQuestion] = useState<MiddleQuestion | null>(null);
     const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -101,7 +105,17 @@ export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, o
         // Generate the question
         // Note: MiddleMathGenerator might still pick a QType that was repeated >2 times in past 5.
         // For simplicity and to avoid infinite loops, the generator handles fallback internally.
-        const q: MiddleQuestion = generateFnRef.current(seed, index, allowedTypes);
+        let q: MiddleQuestion = generateFnRef.current(seed, index, allowedTypes);
+
+        if (levelRange) {
+            for (let attempt = 0; attempt < 20; attempt++) {
+                const candidate: MiddleQuestion = generateFnRef.current(`${seed}-study-${attempt}`, index, allowedTypes);
+                if (candidate.level >= levelRange.min && candidate.level <= levelRange.max) {
+                    q = candidate;
+                    break;
+                }
+            }
+        }
 
         // Boredom Prevention (fallback if QType is too repeated, we could iterate index, but deterministic requires careful handling.
         // The spec requested max 2 QType in last 5. We will accept slight deviations if the generator RNG falls on it,
@@ -115,7 +129,7 @@ export function useMiddleGameSession({ seed, allowedTypes: globalAllowedTypes, o
         setFeedback(null);
         setSelectedAnswer(null);
         setIsProcessing(false);
-    }, [seed, determineRhythmRng]);
+    }, [seed, determineRhythmRng, globalAllowedTypes, levelRange]);
 
     const submitAnswer = useCallback((selected: number) => {
         if (!currentQuestion || feedback || isProcessing || isSubmittingRef.current) return;

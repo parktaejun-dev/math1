@@ -200,7 +200,7 @@ export default function HomePage() {
 
               <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center h-[72px]">
                 <div className="flex items-center justify-center space-x-2 h-full">
-                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">수능 연습 모드</span>
+                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">수능 공부 페이지</span>
                   <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">menu_book</span>
                 </div>
               </button>
@@ -217,10 +217,23 @@ export default function HomePage() {
 
               <Link href="/middle/practice" className="flex-1 w-full sm:w-auto block h-[72px]">
                 <button className="flex items-center justify-center space-x-2 px-6 py-4 rounded-md shadow-sm border-2 border-transparent bg-amber-50 text-amber-600 hover:bg-amber-100 hover:shadow-md transition-all duration-300 w-full h-full">
-                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">중등 연습 모드</span>
+                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">중등 공부 페이지</span>
                   <span className="material-symbols-outlined text-xl">menu_book</span>
                 </button>
               </Link>
+            </div>
+            <div className="w-full rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-slate-900 p-2 text-white">
+                  <span className="material-symbols-outlined block leading-none">auto_stories</span>
+                </div>
+                <div>
+                  <div className="font-serif text-lg font-bold text-slate-900">공부형 서브페이지 추가</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    연습 모드는 이제 시간 제한 없이 기본, 응용, 고난도 세트로 이어서 푸는 공부 페이지로 연결됩니다.
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="w-full border-t border-b border-black py-4">
               <div className="grid grid-cols-4 divide-x divide-gray-400 text-center font-serif text-sm">
