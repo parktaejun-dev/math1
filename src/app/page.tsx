@@ -17,22 +17,44 @@ interface HistoryEntry {
   maxCombo?: number;
 }
 
+interface DrawerLinkItem {
+  kind: 'link';
+  href: string;
+  label: string;
+  description: string;
+  accentClass: string;
+  icon: string;
+}
+
+interface DrawerActionItem {
+  kind: 'action';
+  label: string;
+  description: string;
+  accentClass: string;
+  icon: string;
+  action: 'suneung' | 'middle';
+}
+
+type DrawerItem = DrawerLinkItem | DrawerActionItem;
+
 const studyMenuItems = [
   {
+    kind: 'link',
     href: '/practice',
     label: '고등학교 학습',
     description: '수능형 기본, 응용, 심화 세트를 시간 제한 없이 순서대로 풀 수 있습니다.',
-    accentClass: 'border-navy-official/20 bg-white text-navy-official',
+    accentClass: 'border-[#cbd9ff] bg-[linear-gradient(135deg,#ffffff_0%,#edf4ff_100%)] text-navy-official',
     icon: 'calculate',
   },
   {
+    kind: 'link',
     href: '/middle/practice',
     label: '중학교 학습',
     description: '학교 시험형 기본 문제부터 사고력 중심 심화 세트까지 단계별로 정리했습니다.',
-    accentClass: 'border-amber-200 bg-amber-50 text-amber-700',
+    accentClass: 'border-amber-200 bg-[linear-gradient(135deg,#fffaf0_0%,#fff1d6_100%)] text-amber-700',
     icon: 'school',
   },
-] as const;
+] as const satisfies readonly DrawerLinkItem[];
 
 export default function HomePage() {
   const router = useRouter();
@@ -150,6 +172,52 @@ export default function HomePage() {
     router.push('/middle/play');
   };
 
+  const quickAccessSections: Array<{
+    title: string;
+    eyebrow: string;
+    description: string;
+    items: DrawerItem[];
+  }> = [
+      {
+        title: '공부용 페이지',
+        eyebrow: 'Study',
+        description: '시간 제한 없이 기본, 응용, 심화 세트로 들어갑니다.',
+        items: [...studyMenuItems],
+      },
+      {
+        title: '실전 연습',
+        eyebrow: 'Practice',
+        description: '기존 타임어택 모드를 바로 여는 메뉴입니다.',
+        items: [
+          {
+            kind: 'action',
+            action: 'suneung',
+            label: '수능 연습',
+            description: '60초 제한, 콤보 점수, 전국 랭킹이 반영되는 실전 모드입니다.',
+            accentClass: 'border-[#d9dde7] bg-[linear-gradient(135deg,#ffffff_0%,#f4f6fb_100%)] text-slate-800',
+            icon: 'edit_square',
+          },
+          {
+            kind: 'action',
+            action: 'middle',
+            label: '중등 연습',
+            description: '중학 시험형 타임어택으로 빠르게 점수 감각을 끌어올립니다.',
+            accentClass: 'border-[#ffe0b8] bg-[linear-gradient(135deg,#fffdf8_0%,#fff1dc_100%)] text-amber-800',
+            icon: 'bolt',
+          },
+        ],
+      },
+    ];
+
+  const handleDrawerAction = (action: DrawerActionItem['action']) => {
+    setIsStudyMenuOpen(false);
+    if (action === 'suneung') {
+      handleStart();
+      return;
+    }
+    handleMiddleStart();
+  };
+
   return (
     <div className="font-sans text-ink flex flex-col items-center py-8 min-h-screen bg-[#e8e8e8] bg-[url(https://lh3.googleusercontent.com/aida-public/AB6AXuAJKyLrtvjl4ZoLlzPAtau-RoXWcpoih6W0vJa1ZzMVZjinzRRXaNprxUrjuKAKkHq84QUaO6-igY-ehkc24E0PcVQnNIhEARY9brsXLmE_9_3zcibC9HTglNw9TzPOTTtUeN-1TOa3Gdz1Oqga_w-Sjn6ehZimYwj1yXKsssnZ4iATX3WY_EoljGYEUSuMd6bypBM1nJeJk7Y3T-e9-WpP9Hqq4OeK9QsLoqb9PWIVsLUmI-xNdtj4ChLiemyPZoB_FEiQHCHo1Ks)]">
       {isStudyMenuOpen ? (
@@ -181,28 +249,58 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-6">
-              {studyMenuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsStudyMenuOpen(false)}
-                  className={`block rounded-3xl border p-5 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg ${item.accentClass}`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-2xl border border-current/15 bg-white/80 p-3">
-                      <span className="material-symbols-outlined block text-[28px]">{item.icon}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-serif text-2xl font-bold tracking-tight">{item.label}</div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
-                        <span>바로 이동</span>
-                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                      </div>
-                    </div>
+            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-6">
+              {quickAccessSections.map((section) => (
+                <section key={section.title} className="space-y-3">
+                  <div className="px-1">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">{section.eyebrow}</p>
+                    <h3 className="mt-2 font-serif text-2xl font-bold text-slate-900">{section.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{section.description}</p>
                   </div>
-                </Link>
+                  <div className="space-y-4">
+                    {section.items.map((item) => {
+                      const content = (
+                        <div className="flex items-start gap-4">
+                          <div className="rounded-2xl border border-current/15 bg-white/80 p-3">
+                            <span className="material-symbols-outlined block text-[28px]">{item.icon}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-serif text-2xl font-bold tracking-tight">{item.label}</div>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                            <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
+                              <span>바로 이동</span>
+                              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+
+                      if (item.kind === 'link') {
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsStudyMenuOpen(false)}
+                            className={`block rounded-3xl border p-5 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg ${item.accentClass}`}
+                          >
+                            {content}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => handleDrawerAction(item.action)}
+                          className={`block w-full rounded-3xl border p-5 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg ${item.accentClass}`}
+                        >
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
               ))}
             </div>
           </aside>
@@ -240,12 +338,24 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setIsStudyMenuOpen(true)}
-              className="flex items-center gap-2 rounded-full border border-[#0f49bd] bg-[#0f49bd] px-4 py-2 text-white shadow-[0_10px_30px_rgba(15,73,189,0.24)] transition-colors hover:bg-[#0c3b97]"
+              className="group relative overflow-hidden rounded-[22px] border border-[#0f49bd]/20 bg-[linear-gradient(135deg,#fffef8_0%,#eef4ff_100%)] px-4 py-3 text-left text-slate-900 shadow-[0_18px_40px_rgba(15,73,189,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(15,73,189,0.22)]"
               aria-label="공부하기 메뉴 열기"
               aria-expanded={isStudyMenuOpen}
             >
-              <span className="material-symbols-outlined text-[20px]">menu_book</span>
-              <span className="font-sans text-sm font-bold">공부하기</span>
+              <span className="absolute inset-y-0 left-0 w-1.5 bg-[linear-gradient(180deg,#0f49bd_0%,#ffb347_100%)]" />
+              <span className="flex items-center gap-3 pl-2">
+                <span className="rounded-2xl bg-[#0f49bd] p-2.5 text-white shadow-[0_10px_20px_rgba(15,73,189,0.22)] transition-transform duration-200 group-hover:scale-105">
+                  <span className="material-symbols-outlined block text-[20px]">menu_book</span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Study Hub</span>
+                  <span className="mt-0.5 block font-serif text-lg font-bold tracking-tight text-slate-900">공부하기</span>
+                  <span className="block text-xs text-slate-500">학습 · 수능 연습 · 중등 연습</span>
+                </span>
+                <span className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-500 transition-colors group-hover:border-[#0f49bd] group-hover:text-[#0f49bd]">
+                  <span className="material-symbols-outlined block text-[20px]">arrow_forward</span>
+                </span>
+              </span>
             </button>
           </div>
         </header>
@@ -342,11 +452,13 @@ export default function HomePage() {
                   </div>
                   <div className="mt-3 font-serif text-2xl font-bold text-slate-900">공부하기</div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    타임어택이 아니라 공부용 세트로 들어갑니다. 메뉴에서 고등학교 학습, 중학교 학습을 바로 고르면 됩니다.
+                    공부 페이지와 기존 실전 모드를 한 번에 여는 허브입니다. 고등학교 학습, 중학교 학습, 수능 연습, 중등 연습을 여기서 바로 고릅니다.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="rounded-full border border-[#bfd0ff] bg-white px-3 py-1 text-xs font-semibold text-[#0f49bd]">고등학교 학습</span>
                     <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-700">중학교 학습</span>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">수능 연습</span>
+                    <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold text-orange-700">중등 연습</span>
                   </div>
                   <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#0f49bd]">
                     <span>학습 메뉴 열기</span>
