@@ -61,7 +61,7 @@ export default function QuestionBoard({
                 const data = await res.json();
                 if (data.explanation) setAiExplanation(data.explanation);
                 else setAiExplanation('해설을 불러오는데 실패했습니다.');
-            } catch (err) {
+            } catch {
                 setAiExplanation('오류가 발생했습니다. 다시 시도해주세요.');
             } finally {
                 setIsAiLoading(false);
@@ -92,6 +92,17 @@ export default function QuestionBoard({
             return <div dangerouslySetInnerHTML={{ __html: latex }} />;
         }
     };
+
+    const renderRichText = (content: string) => (
+        <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
+            <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+            >
+                {content}
+            </ReactMarkdown>
+        </div>
+    );
 
     return (
         <div className="w-full h-full flex flex-col overflow-y-auto scrollbar-hide">
@@ -131,25 +142,9 @@ export default function QuestionBoard({
                                         <span className="material-symbols-outlined animate-spin text-xl">refresh</span>
                                         <span className="text-sm font-medium">AI 선생님이 해설을 작성중입니다...</span>
                                     </div>
-                                ) : (
-                                    <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkMath]}
-                                            rehypePlugins={[rehypeKatex]}
-                                        >
-                                            {aiExplanation || ''}
-                                        </ReactMarkdown>
-                                    </div>
-                                )
+                                ) : renderRichText(aiExplanation || '')
                             ) : (
-                                <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkMath]}
-                                        rehypePlugins={[rehypeKatex]}
-                                    >
-                                        {currentQuestion.hint || '이 문제에 대한 팁이 없습니다.'}
-                                    </ReactMarkdown>
-                                </div>
+                                renderRichText(currentQuestion.hint || '이 문제에 대한 팁이 없습니다.')
                             )}
                         </div>
                     </div>
@@ -208,6 +203,36 @@ export default function QuestionBoard({
                         );
                     })}
                 </div>
+
+                {feedback !== null && (
+                    <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold tracking-[0.16em] text-slate-600">
+                                REVIEW
+                            </span>
+                            <span className="text-sm font-bold text-slate-900">정답 {currentQuestion.answer}</span>
+                        </div>
+
+                        <div>
+                            <div className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">풀이 해설</div>
+                            {renderRichText(currentQuestion.solution || currentQuestion.hint || '이 문제의 해설이 아직 준비되지 않았습니다.')}
+                        </div>
+
+                        {currentQuestion.misconception ? (
+                            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                                <div className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-rose-700">자주 하는 실수</div>
+                                <p className="text-sm leading-6 text-rose-900">{currentQuestion.misconception}</p>
+                            </div>
+                        ) : null}
+
+                        {currentQuestion.teacherNote ? (
+                            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+                                <div className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-sky-700">교사 메모</div>
+                                <p className="text-sm leading-6 text-sky-900">{currentQuestion.teacherNote}</p>
+                            </div>
+                        ) : null}
+                    </div>
+                )}
             </div>
         </div>
     );

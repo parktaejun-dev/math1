@@ -37,6 +37,7 @@ function MiddleStudyRuntime({ tier, onRestart }: RuntimeProps) {
     selectedAnswer,
     isProcessing,
     solvedCount,
+    focusStats,
     submitAnswer,
     submitPass,
     nextQuestion,
@@ -61,6 +62,10 @@ function MiddleStudyRuntime({ tier, onRestart }: RuntimeProps) {
   });
 
   const accuracy = solvedCount > 0 ? Math.round((correctCount / solvedCount) * 100) : 0;
+  const weakFocuses = Object.entries(focusStats)
+    .filter(([, stat]) => stat.wrong > 0)
+    .sort((a, b) => b[1].wrong - a[1].wrong)
+    .slice(0, 3);
   const currentFocus = currentQuestion
     ? questionMeta.focusLabel || MIDDLE_TYPE_LABELS[currentQuestion.cognitiveType as CognitiveType] || currentQuestion.cognitiveType
     : '문제 로딩 중';
@@ -110,6 +115,20 @@ function MiddleStudyRuntime({ tier, onRestart }: RuntimeProps) {
                   : '오답이 난 문제 유형을 중심으로 같은 단계에서 몇 문제 더 반복하는 편이 좋습니다.'}
               </p>
             </div>
+
+            {weakFocuses.length > 0 ? (
+              <div className="mt-4 rounded-[28px] border border-rose-200 bg-rose-50 p-5">
+                <div className="text-sm font-bold text-slate-900">이번 세션에서 흔들린 포인트</div>
+                <div className="mt-3 space-y-2">
+                  {weakFocuses.map(([focus, stat]) => (
+                    <div key={focus} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm text-slate-700">
+                      <span className="font-medium">{focus}</span>
+                      <span className="font-bold text-rose-700">오답 {stat.wrong}회</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <button

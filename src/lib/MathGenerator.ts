@@ -10,6 +10,9 @@ export interface Question {
   choices: number[];
   type: string;
   hint?: string;
+  solution?: string;
+  misconception?: string;
+  teacherNote?: string;
 }
 
 // Mulberry32 PRNG — fast, deterministic, 32-bit state
@@ -118,7 +121,7 @@ function generateCSATChoices(answer: number, rng: () => number, type: string = '
     pool.add(answer * 2);
   }
 
-  let distractorArray = Array.from(pool).filter(d =>
+  const distractorArray = Array.from(pool).filter(d =>
     d !== answer && d > 0 && Number.isInteger(d)
   );
 
@@ -237,12 +240,12 @@ function generateType4Question(rng: () => number): Omit<Question, 'id' | 'choice
 
 // [4] Logarithm Properties
 function generateType5Question(rng: () => number): Omit<Question, 'id' | 'choices'> {
-  let base = [2, 3][Math.floor(rng() * 2)];
-  let ans = Math.floor(rng() * 4) + 2;
-  let p1 = Math.floor(rng() * (ans - 1)) + 1;
-  let p2 = ans - p1;
-  let b = Math.pow(base, p1);
-  let c = Math.pow(base, p2);
+  const base = [2, 3][Math.floor(rng() * 2)];
+  const ans = Math.floor(rng() * 4) + 2;
+  const p1 = Math.floor(rng() * (ans - 1)) + 1;
+  const p2 = ans - p1;
+  const b = Math.pow(base, p1);
+  const c = Math.pow(base, p2);
 
   return {
     latex: `\\log_{${base}} ${b} + \\log_{${base}} ${c} = ?`,

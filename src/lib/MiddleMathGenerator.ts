@@ -14,6 +14,9 @@ export interface MiddleQuestion {
     cognitiveType: CognitiveType;
     type: string;
     hint?: string;
+    solution?: string;
+    misconception?: string;
+    teacherNote?: string;
 }
 
 // Mulberry32 PRNG — fast, deterministic, 32-bit state
@@ -116,7 +119,7 @@ function generateCognitiveDistractors(answer: number, rng: () => number, type: s
     }
 
     // Filter to valid distinct distractors
-    let distractorArray = Array.from(pool).filter(d =>
+    const distractorArray = Array.from(pool).filter(d =>
         d !== answer && Number.isInteger(d) && !Number.isNaN(d)
     );
 

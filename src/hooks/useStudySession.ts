@@ -10,6 +10,11 @@ interface UseStudySessionProps {
   onWrong?: () => void;
 }
 
+export interface FocusStat {
+  correct: number;
+  wrong: number;
+}
+
 const defaultMeta: StudyQuestionMeta = {
   source: 'local',
   sourceLabel: '문제 준비 중',
@@ -32,6 +37,7 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
   const [isReady, setIsReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [solvedCount, setSolvedCount] = useState(0);
+  const [focusStats, setFocusStats] = useState<Record<string, FocusStat>>({});
   const requestIdRef = useRef(0);
 
   const loadQuestion = useCallback(async (index: number) => {
@@ -72,6 +78,20 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     void loadQuestion(0);
   }, [loadQuestion]);
 
+  const recordFocusResult = useCallback((isCorrect: boolean) => {
+    const focusLabel = questionMeta.focusLabel || '기타';
+    setFocusStats((prev) => {
+      const current = prev[focusLabel] || { correct: 0, wrong: 0 };
+      return {
+        ...prev,
+        [focusLabel]: {
+          correct: current.correct + (isCorrect ? 1 : 0),
+          wrong: current.wrong + (isCorrect ? 0 : 1),
+        },
+      };
+    });
+  }, [questionMeta.focusLabel]);
+
   const submitAnswer = useCallback((choice: number) => {
     if (!currentQuestion || feedback || isProcessing) return;
 
@@ -81,13 +101,15 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     setSolvedCount((prev) => prev + 1);
 
     if (isCorrect) {
+      recordFocusResult(true);
       setCorrectCount((prev) => prev + 1);
       onCorrect?.();
       return;
     }
 
+    recordFocusResult(false);
     onWrong?.();
-  }, [currentQuestion, feedback, isProcessing, onCorrect, onWrong]);
+  }, [currentQuestion, feedback, isProcessing, onCorrect, onWrong, recordFocusResult]);
 
   const submitPass = useCallback(() => {
     if (!currentQuestion || feedback || isProcessing) return;
@@ -95,8 +117,9 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     setSelectedAnswer(-1);
     setFeedback('wrong');
     setSolvedCount((prev) => prev + 1);
+    recordFocusResult(false);
     onWrong?.();
-  }, [currentQuestion, feedback, isProcessing, onWrong]);
+  }, [currentQuestion, feedback, isProcessing, onWrong, recordFocusResult]);
 
   const nextQuestion = useCallback(() => {
     void loadQuestion(currentIndex + 1);
@@ -112,6 +135,7 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     correctCount,
     selectedAnswer,
     solvedCount,
+    focusStats,
     submitAnswer,
     submitPass,
     nextQuestion,

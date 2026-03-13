@@ -72,6 +72,8 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
   "answer": 12,
   "choices": [4, 8, 12, 16, 20],
   "hint": "핵심 발상만 짧게",
+  "solution": "정답에 이르는 풀이를 2~4단계로 설명",
+  "misconception": "학생이 흔히 하는 실수 한 줄",
   "type": "허용 유형 중 하나",
   "focusLabel": "사용자에게 보일 단원명",
   "level": 5,
@@ -88,6 +90,7 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
 7. JSON 외 텍스트는 절대 쓰지 마세요.
 8. latex 안에 $ 기호나 markdown 코드블록 표시는 절대 쓰지 마세요.
 9. 한국어 문장은 반드시 \\text{...} 안에 넣으세요.
+10. solution은 실제 수업용 해설처럼 단계별로 쓰세요.
 `;
 
   try {
@@ -126,6 +129,8 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
         answer: parsed.answer,
         choices: sanitizeNumericChoices(parsed.answer, parsed.choices, seed, index),
         hint: typeof parsed.hint === 'string' ? parsed.hint : '핵심 개념을 먼저 정리한 뒤, 보기 판단으로 넘어가세요.',
+        solution: typeof parsed.solution === 'string' ? parsed.solution : '핵심 개념을 먼저 확인하고, 식을 정리한 뒤 대입 또는 계산을 마무리하세요.',
+        misconception: typeof parsed.misconception === 'string' ? parsed.misconception : '조건을 일부만 보고 성급하게 계산에 들어가면 오답이 날 수 있습니다.',
         type,
       };
 
@@ -151,6 +156,8 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
       answer: parsed.answer,
       choices: sanitizeNumericChoices(parsed.answer, parsed.choices, seed, index),
       hint: typeof parsed.hint === 'string' ? parsed.hint : '조건을 식으로 바꾸고, 필요한 경우를 나누어 보세요.',
+      solution: typeof parsed.solution === 'string' ? parsed.solution : '조건을 문자로 두고 식을 세운 뒤, 단계별로 정리해 정답을 구하세요.',
+      misconception: typeof parsed.misconception === 'string' ? parsed.misconception : '조건을 한 번에 처리하려 하면 놓치는 값이 생길 수 있습니다.',
       type: typeof parsed.type === 'string' ? parsed.type : `${cognitiveType}_ai`,
       cognitiveType,
       level: sanitizeMiddleLevel(parsed.level, middleConfig),
