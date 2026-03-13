@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { QType } from '@/lib/MathGenerator';
+import type { QType, Question } from '@/lib/MathGenerator';
 import { playCorrect, playWrong } from '@/lib/sound';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useStudySession } from '@/hooks/useStudySession';
@@ -41,7 +41,7 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
     submitAnswer,
     submitPass,
     nextQuestion,
-  } = useStudySession({
+  } = useStudySession<Question>({
     track: 'suneung',
     tier: tier.slug,
     seed,

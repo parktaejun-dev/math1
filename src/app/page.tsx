@@ -13,6 +13,8 @@ interface LeaderboardEntry {
 interface HistoryEntry {
   score?: number;
   date?: string;
+  accuracy?: number;
+  maxCombo?: number;
 }
 
 const studyMenuItems = [

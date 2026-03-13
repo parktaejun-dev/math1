@@ -27,7 +27,7 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
   seed,
   onCorrect,
   onWrong,
-}: UseStudySessionProps<TQuestion>) {
+}: UseStudySessionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState<TQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<StudyQuestionMeta>(defaultMeta);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { CognitiveType } from '@/lib/MiddleMathGenerator';
+import type { CognitiveType, MiddleQuestion } from '@/lib/MiddleMathGenerator';
 import { playCorrect, playWrong } from '@/lib/sound';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useStudySession } from '@/hooks/useStudySession';
@@ -41,7 +41,7 @@ function MiddleStudyRuntime({ tier, onRestart }: RuntimeProps) {
     submitAnswer,
     submitPass,
     nextQuestion,
-  } = useStudySession({
+  } = useStudySession<MiddleQuestion>({
     track: 'middle',
     tier: tier.slug,
     seed,

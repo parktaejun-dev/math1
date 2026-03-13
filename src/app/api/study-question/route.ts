@@ -14,7 +14,7 @@ import {
   type StudyQuestionResponse,
   type StudyTrack,
 } from '@/lib/studyQuestionFactory';
-import type { StudyTier } from '@/lib/studyConfig';
+import { getMiddleStudyTier, getSuneungStudyTier, type StudyTier } from '@/lib/studyConfig';
 
 function extractJsonObject(content: string): string | null {
   const start = content.indexOf('{');
@@ -117,8 +117,8 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
     }
 
     if (track === 'suneung') {
-      const suneungConfig = getStudyTierConfig('suneung', tier);
-      if (!suneungConfig || !('allowedTypes' in suneungConfig)) return null;
+      const suneungConfig = getSuneungStudyTier(tier);
+      if (!suneungConfig) return null;
       const type = typeof parsed.type === 'string' && suneungConfig.allowedTypes.includes(parsed.type as QType)
         ? parsed.type as QType
         : suneungConfig.allowedTypes[0];
@@ -144,8 +144,8 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
       };
     }
 
-    const middleConfig = getStudyTierConfig('middle', tier);
-    if (!middleConfig || !('levelRange' in middleConfig)) return null;
+    const middleConfig = getMiddleStudyTier(tier);
+    if (!middleConfig) return null;
     const cognitiveType = typeof parsed.cognitiveType === 'string' && middleConfig.allowedTypes.includes(parsed.cognitiveType as CognitiveType)
       ? parsed.cognitiveType as CognitiveType
       : middleConfig.allowedTypes[0];
