@@ -240,12 +240,12 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setIsStudyMenuOpen(true)}
-              className="flex items-center gap-2 rounded border border-slate-900 bg-slate-900 px-3 py-2 text-white shadow-sm transition-colors hover:bg-slate-700"
-              aria-label="학습 메뉴 열기"
+              className="flex items-center gap-2 rounded-full border border-[#0f49bd] bg-[#0f49bd] px-4 py-2 text-white shadow-[0_10px_30px_rgba(15,73,189,0.24)] transition-colors hover:bg-[#0c3b97]"
+              aria-label="공부하기 메뉴 열기"
               aria-expanded={isStudyMenuOpen}
             >
-              <span className="material-symbols-outlined text-[20px]">menu</span>
-              <span className="hidden font-sans text-sm font-bold sm:inline">학습 메뉴</span>
+              <span className="material-symbols-outlined text-[20px]">menu_book</span>
+              <span className="font-sans text-sm font-bold">공부하기</span>
             </button>
           </div>
         </header>
@@ -329,19 +329,35 @@ export default function HomePage() {
                 </div>
               </button>
             </div>
-            <div className="w-full rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="rounded-2xl bg-slate-900 p-2 text-white">
-                  <span className="material-symbols-outlined block leading-none">menu</span>
-                </div>
-                <div>
-                  <div className="font-serif text-lg font-bold text-slate-900">학습 메뉴 분리</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    공부 페이지는 우측 상단 햄버거 메뉴 안으로 분리했습니다. 메뉴에서 `고등학교 학습`, `중학교 학습` 중 원하는 흐름으로 바로 들어가면 됩니다.
+            <button
+              type="button"
+              onClick={() => setIsStudyMenuOpen(true)}
+              className="w-full rounded-[28px] border-2 border-[#bfd0ff] bg-[linear-gradient(135deg,#f7fbff_0%,#edf4ff_100%)] p-5 text-left shadow-[0_18px_45px_rgba(15,73,189,0.12)] transition-transform duration-200 hover:-translate-y-0.5"
+              aria-label="공부하기 메뉴 열기 버튼"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="inline-flex rounded-full border border-[#bfd0ff] bg-white px-3 py-1 text-[11px] font-bold tracking-[0.18em] text-[#0f49bd]">
+                    STUDY
+                  </div>
+                  <div className="mt-3 font-serif text-2xl font-bold text-slate-900">공부하기</div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    타임어택이 아니라 공부용 세트로 들어갑니다. 메뉴에서 고등학교 학습, 중학교 학습을 바로 고르면 됩니다.
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-[#bfd0ff] bg-white px-3 py-1 text-xs font-semibold text-[#0f49bd]">고등학교 학습</span>
+                    <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-700">중학교 학습</span>
+                  </div>
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#0f49bd]">
+                    <span>학습 메뉴 열기</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-[#bfd0ff] bg-white p-3 text-[#0f49bd] shadow-sm">
+                  <span className="material-symbols-outlined block text-[28px]">menu_book</span>
                 </div>
               </div>
-            </div>
+            </button>
             <div className="w-full border-t border-b border-black py-4">
               <div className="grid grid-cols-4 divide-x divide-gray-400 text-center font-serif text-sm">
                 <div className="px-2 flex flex-col items-center gap-1">

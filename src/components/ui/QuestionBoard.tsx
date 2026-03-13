@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import katex from 'katex';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 import { Question } from '@/lib/MathGenerator';
 import GeometryCanvas from '@/components/GeometryCanvas';
 
@@ -34,12 +31,23 @@ export default function QuestionBoard({
     const [isHintOpen, setIsHintOpen] = useState(false);
     const [aiExplanation, setAiExplanation] = useState<string | null>(null);
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
 
     // Reset state when question changes
     React.useEffect(() => {
         setIsHintOpen(false);
         setAiExplanation(null);
         setIsAiLoading(false);
+        containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.requestAnimationFrame(() => {
+            containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+        });
     }, [currentIndex]);
 
     if (!currentQuestion) return null;
@@ -79,7 +87,7 @@ export default function QuestionBoard({
         try {
             return (
                 <div
-                    className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 break-keep break-words whitespace-pre-wrap [&_.katex-display]:!whitespace-normal [&_.katex-display]:!break-words [&_.katex-display]:!flex-wrap [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900 pb-2"
+                    className="max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-2 text-base font-bold leading-relaxed text-slate-900 sm:text-lg [&_.katex-display]:!my-0 [&_.katex-display]:!max-w-full [&_.katex-display]:!overflow-x-auto [&_.katex-display]:!overflow-y-hidden [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900"
                     dangerouslySetInnerHTML={{
                         __html: katex.renderToString(latex, {
                             throwOnError: false,
@@ -93,23 +101,95 @@ export default function QuestionBoard({
         }
     };
 
-    const renderRichText = (content: string) => (
-        <div className="text-sm text-slate-700 leading-relaxed font-sans whitespace-pre-wrap [&_.katex]:!text-slate-800 prose prose-slate max-w-none prose-sm prose-p:my-1 prose-strong:text-slate-800 prose-strong:font-bold prose-ul:my-1 prose-li:my-0.5">
-            <ReactMarkdown
-                remarkPlugins={[remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-            >
-                {content}
-            </ReactMarkdown>
-        </div>
-    );
+    const renderInlineMathText = (content: string, keyPrefix: string) => {
+        const segments = content.split(/(\$\$[\s\S]+?\$\$|\$[^$]+\$)/g).filter(Boolean);
+
+        return segments.map((segment, index) => {
+            const isDisplayMath = segment.startsWith('$$') && segment.endsWith('$$');
+            const isInlineMath = segment.startsWith('$') && segment.endsWith('$');
+
+            if (!isDisplayMath && !isInlineMath) {
+                return <React.Fragment key={`${keyPrefix}-text-${index}`}>{segment}</React.Fragment>;
+            }
+
+            const expression = segment.slice(isDisplayMath ? 2 : 1, isDisplayMath ? -2 : -1).trim();
+            if (!expression) {
+                return null;
+            }
+
+            try {
+                return (
+                    <span
+                        key={`${keyPrefix}-math-${index}`}
+                        className={isDisplayMath ? 'my-1 block max-w-full overflow-x-auto overflow-y-hidden' : 'inline-block max-w-full align-middle'}
+                        dangerouslySetInnerHTML={{
+                            __html: katex.renderToString(expression, {
+                                throwOnError: false,
+                                displayMode: isDisplayMath,
+                            }),
+                        }}
+                    />
+                );
+            } catch {
+                return <React.Fragment key={`${keyPrefix}-fallback-${index}`}>{segment}</React.Fragment>;
+            }
+        });
+    };
+
+    const renderRichText = (content: string) => {
+        const lines = content.replace(/\r\n?/g, '\n').split('\n');
+
+        return (
+            <div className="space-y-3 text-sm leading-7 text-slate-700">
+                {lines.map((line, index) => {
+                    const trimmed = line.trim();
+
+                    if (!trimmed) {
+                        return <div key={`spacer-${index}`} className="h-1" />;
+                    }
+
+                    const stepMatch = trimmed.match(/^(\d+)\.\s*(.*)$/);
+                    if (stepMatch) {
+                        return (
+                            <div key={`step-${index}`} className="flex items-start gap-3">
+                                <span className="mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
+                                    {stepMatch[1]}
+                                </span>
+                                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
+                                    {renderInlineMathText(stepMatch[2], `step-${index}`)}
+                                </p>
+                            </div>
+                        );
+                    }
+
+                    const bulletMatch = trimmed.match(/^[-*]\s+(.*)$/);
+                    if (bulletMatch) {
+                        return (
+                            <div key={`bullet-${index}`} className="flex items-start gap-3">
+                                <span className="mt-[10px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-400" />
+                                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
+                                    {renderInlineMathText(bulletMatch[1], `bullet-${index}`)}
+                                </p>
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <p key={`line-${index}`} className="whitespace-pre-wrap break-words">
+                            {renderInlineMathText(trimmed, `line-${index}`)}
+                        </p>
+                    );
+                })}
+            </div>
+        );
+    };
 
     return (
-        <div className="w-full h-full flex flex-col overflow-y-auto scrollbar-hide">
-            <div key={`question-${currentIndex}`} className={`pb-4 pr-1 slide-in ${feedback === 'wrong' ? 'animate-shake' : ''}`}>
-                <div className="flex gap-2 items-start mt-2 bg-white border border-slate-200 shadow-sm p-3 sm:p-4 rounded-xl">
+        <div ref={containerRef} className="flex h-full w-full min-w-0 flex-col overflow-x-hidden overflow-y-auto scrollbar-hide">
+            <div key={`question-${currentIndex}`} className={`slide-in min-w-0 pb-4 pr-1 ${feedback === 'wrong' ? 'animate-shake' : ''}`}>
+                <div className="mt-2 flex min-w-0 items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                     <div className="text-xl font-black text-slate-900 leading-none mt-0.5 font-serif flex-shrink-0 w-6">{currentIndex + 1}.</div>
-                    <div className="flex-1 flex flex-col min-w-0">
+                    <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden">
                         {renderLatexOrSvg(currentQuestion.latex)}
                     </div>
                     {currentLevel !== undefined && (
@@ -221,14 +301,18 @@ export default function QuestionBoard({
                         {currentQuestion.misconception ? (
                             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
                                 <div className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-rose-700">자주 하는 실수</div>
-                                <p className="text-sm leading-6 text-rose-900">{currentQuestion.misconception}</p>
+                                <div className="text-rose-900">
+                                    {renderRichText(currentQuestion.misconception)}
+                                </div>
                             </div>
                         ) : null}
 
                         {currentQuestion.teacherNote ? (
                             <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
                                 <div className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-sky-700">교사 메모</div>
-                                <p className="text-sm leading-6 text-sky-900">{currentQuestion.teacherNote}</p>
+                                <div className="text-sky-900">
+                                    {renderRichText(currentQuestion.teacherNote)}
+                                </div>
                             </div>
                         ) : null}
                     </div>

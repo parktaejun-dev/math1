@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { StudyQuestionMeta, StudyQuestionResponse, StudyQuestionShape, StudyTrack } from '@/lib/studyQuestionFactory';
-import type { StudyTier } from '@/lib/studyConfig';
+import { getStudyTierFromIndex, getStudyTierIndex, type StudyTier } from '@/lib/studyConfig';
 
 interface UseStudySessionProps {
   track: StudyTrack;
@@ -19,6 +19,9 @@ const defaultMeta: StudyQuestionMeta = {
   source: 'local',
   sourceLabel: '문제 준비 중',
   focusLabel: '문제 준비 중',
+  difficultyTier: 'basic',
+  difficultyBadge: 'BASIC',
+  difficultyStep: 0,
 };
 
 export function useStudySession<TQuestion extends StudyQuestionShape>({
@@ -38,11 +41,21 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
   const [isProcessing, setIsProcessing] = useState(false);
   const [solvedCount, setSolvedCount] = useState(0);
   const [focusStats, setFocusStats] = useState<Record<string, FocusStat>>({});
+  const [adaptiveTier, setAdaptiveTier] = useState<StudyTier>(tier);
+  const [difficultyStep, setDifficultyStep] = useState(0);
+  const [recentTypes, setRecentTypes] = useState<string[]>([]);
+  const [recentFocuses, setRecentFocuses] = useState<string[]>([]);
   const requestIdRef = useRef(0);
+  const adaptiveTierRef = useRef<StudyTier>(tier);
+  const difficultyStepRef = useRef(0);
+  const recentTypesRef = useRef<string[]>([]);
+  const recentFocusesRef = useRef<string[]>([]);
 
-  const loadQuestion = useCallback(async (index: number) => {
+  const loadQuestion = useCallback(async (index: number, nextAdaptiveTier?: StudyTier, nextDifficultyStep?: number) => {
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
+    const requestTier = nextAdaptiveTier ?? adaptiveTierRef.current;
+    const requestDifficultyStep = nextDifficultyStep ?? difficultyStepRef.current;
 
     setIsProcessing(true);
     setFeedback(null);
@@ -53,7 +66,16 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
       const response = await fetch('/api/study-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ track, tier, seed, index }),
+        body: JSON.stringify({
+          track,
+          tier,
+          adaptiveTier: requestTier,
+          difficultyStep: requestDifficultyStep,
+          recentTypes: recentTypesRef.current,
+          recentFocuses: recentFocusesRef.current,
+          seed,
+          index,
+        }),
       });
 
       if (!response.ok) {
@@ -66,6 +88,17 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
       setCurrentIndex(index);
       setCurrentQuestion(data.question);
       setQuestionMeta(data.meta);
+      adaptiveTierRef.current = data.meta.difficultyTier;
+      difficultyStepRef.current = data.meta.difficultyStep;
+      setAdaptiveTier(data.meta.difficultyTier);
+      setDifficultyStep(data.meta.difficultyStep);
+      const nextType = 'cognitiveType' in data.question ? data.question.cognitiveType : data.question.type;
+      const nextRecentTypes = [nextType, ...recentTypesRef.current.filter((value) => value !== nextType)].slice(0, 3);
+      const nextRecentFocuses = [data.meta.focusLabel, ...recentFocusesRef.current.filter((value) => value !== data.meta.focusLabel)].slice(0, 3);
+      recentTypesRef.current = nextRecentTypes;
+      recentFocusesRef.current = nextRecentFocuses;
+      setRecentTypes(nextRecentTypes);
+      setRecentFocuses(nextRecentFocuses);
       setIsReady(true);
     } finally {
       if (requestId === requestIdRef.current) {
@@ -75,8 +108,33 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
   }, [seed, tier, track]);
 
   useEffect(() => {
-    void loadQuestion(0);
+    adaptiveTierRef.current = tier;
+    difficultyStepRef.current = 0;
+    recentTypesRef.current = [];
+    recentFocusesRef.current = [];
+    setAdaptiveTier(tier);
+    setDifficultyStep(0);
+    setRecentTypes([]);
+    setRecentFocuses([]);
+    void loadQuestion(0, tier, 0);
   }, [loadQuestion]);
+
+  const updateAdaptiveDifficulty = useCallback((wasCorrect: boolean) => {
+    const baseTierIndex = getStudyTierIndex(tier);
+    const currentTierIndex = getStudyTierIndex(adaptiveTierRef.current);
+    const nextTierIndex = wasCorrect
+      ? Math.min(2, currentTierIndex + 1)
+      : Math.max(baseTierIndex, currentTierIndex - 1);
+    const nextStep = wasCorrect
+      ? Math.min(2, difficultyStepRef.current + 1)
+      : Math.max(0, difficultyStepRef.current - 1);
+    const nextTier = getStudyTierFromIndex(nextTierIndex);
+
+    adaptiveTierRef.current = nextTier;
+    difficultyStepRef.current = nextStep;
+    setAdaptiveTier(nextTier);
+    setDifficultyStep(nextStep);
+  }, [tier]);
 
   const recordFocusResult = useCallback((isCorrect: boolean) => {
     const focusLabel = questionMeta.focusLabel || '기타';
@@ -101,15 +159,17 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     setSolvedCount((prev) => prev + 1);
 
     if (isCorrect) {
+      updateAdaptiveDifficulty(true);
       recordFocusResult(true);
       setCorrectCount((prev) => prev + 1);
       onCorrect?.();
       return;
     }
 
+    updateAdaptiveDifficulty(false);
     recordFocusResult(false);
     onWrong?.();
-  }, [currentQuestion, feedback, isProcessing, onCorrect, onWrong, recordFocusResult]);
+  }, [currentQuestion, feedback, isProcessing, onCorrect, onWrong, recordFocusResult, updateAdaptiveDifficulty]);
 
   const submitPass = useCallback(() => {
     if (!currentQuestion || feedback || isProcessing) return;
@@ -117,12 +177,13 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     setSelectedAnswer(-1);
     setFeedback('wrong');
     setSolvedCount((prev) => prev + 1);
+    updateAdaptiveDifficulty(false);
     recordFocusResult(false);
     onWrong?.();
-  }, [currentQuestion, feedback, isProcessing, onWrong, recordFocusResult]);
+  }, [currentQuestion, feedback, isProcessing, onWrong, recordFocusResult, updateAdaptiveDifficulty]);
 
   const nextQuestion = useCallback(() => {
-    void loadQuestion(currentIndex + 1);
+    void loadQuestion(currentIndex + 1, adaptiveTierRef.current, difficultyStepRef.current);
   }, [currentIndex, loadQuestion]);
 
   return {
@@ -136,6 +197,10 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
     selectedAnswer,
     solvedCount,
     focusStats,
+    adaptiveTier,
+    difficultyStep,
+    recentTypes,
+    recentFocuses,
     submitAnswer,
     submitPass,
     nextQuestion,

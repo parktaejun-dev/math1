@@ -2,6 +2,7 @@ import type { QType } from './MathGenerator';
 import type { CognitiveType } from './MiddleMathGenerator';
 
 export type StudyTier = 'basic' | 'core' | 'advanced';
+export const studyTierOrder: StudyTier[] = ['basic', 'core', 'advanced'];
 
 export interface BaseStudyTierDefinition {
   slug: StudyTier;
@@ -131,4 +132,12 @@ export function getSuneungStudyTier(slug: string): SuneungStudyTierDefinition | 
 
 export function getMiddleStudyTier(slug: string): MiddleStudyTierDefinition | undefined {
   return middleStudyTiers.find((tier) => tier.slug === slug);
+}
+
+export function getStudyTierIndex(tier: StudyTier): number {
+  return studyTierOrder.indexOf(tier);
+}
+
+export function getStudyTierFromIndex(index: number): StudyTier {
+  return studyTierOrder[Math.max(0, Math.min(studyTierOrder.length - 1, index))];
 }

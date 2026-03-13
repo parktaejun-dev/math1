@@ -38,6 +38,7 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
     isProcessing,
     solvedCount,
     focusStats,
+    adaptiveTier,
     submitAnswer,
     submitPass,
     nextQuestion,
@@ -70,6 +71,18 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
     ? questionMeta.focusLabel || SUNEUNG_TYPE_LABELS[currentQuestion.type as QType] || currentQuestion.type
     : '문제 로딩 중';
   const passUsed = selectedAnswer === -1;
+
+  const resetScrollPosition = () => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const handleNextQuestion = () => {
+    resetScrollPosition();
+    nextQuestion();
+    window.requestAnimationFrame(resetScrollPosition);
+  };
 
   if (view === 'summary') {
     return (
@@ -197,8 +210,8 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
         </header>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
-          <section className="space-y-4">
-            <div className="rounded-[32px] border border-[#d7e5ff] bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
+          <section className="min-w-0 space-y-4">
+            <div className="min-w-0 overflow-hidden rounded-[32px] border border-[#d7e5ff] bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
               <div className="mb-5 flex flex-wrap gap-2">
                 <span className="rounded-full border border-[#bfd0ff] bg-[#edf4ff] px-3 py-1 text-xs font-semibold text-[#0f49bd]">
                   시간 제한 없음
@@ -210,13 +223,13 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
                   현재 포커스: {currentTopic}
                 </span>
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                  난도 레벨 {tier.level}
+                  진행 강도 {questionMeta.difficultyBadge} · Lv.{questionMeta.difficultyLevel ?? tier.level}
                 </span>
               </div>
 
               <QuestionBoard
                 currentIndex={currentIndex}
-                currentLevel={tier.level}
+                currentLevel={questionMeta.difficultyLevel ?? tier.level}
                 currentQuestion={currentQuestion}
                 feedback={feedback}
                 selectedAnswer={selectedAnswer}
@@ -251,7 +264,7 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
 
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <button
-                      onClick={nextQuestion}
+                      onClick={handleNextQuestion}
                       className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#0f49bd] px-5 text-sm font-bold text-white transition-colors hover:bg-[#0c3b97]"
                     >
                       다음 문제
@@ -268,7 +281,7 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
             </div>
           </section>
 
-          <aside className="space-y-4">
+          <aside className="min-w-0 space-y-4">
             <div className="rounded-[28px] border border-[#d7e5ff] bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
               <div className="flex items-center justify-between">
                 <h2 className="font-serif text-xl font-bold text-slate-900">학습 현황</h2>
@@ -289,7 +302,7 @@ function SuneungStudyRuntime({ tier, onRestart }: RuntimeProps) {
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">단계</div>
-                  <div className="mt-2 text-2xl font-black text-slate-900">{tier.badge}</div>
+                  <div className="mt-2 text-2xl font-black text-slate-900">{questionMeta.difficultyBadge || adaptiveTier.toUpperCase()}</div>
                 </div>
               </div>
             </div>

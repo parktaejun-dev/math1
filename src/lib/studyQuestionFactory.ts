@@ -5,6 +5,8 @@ import {
   getSuneungStudyTier,
   MIDDLE_TYPE_LABELS,
   SUNEUNG_TYPE_LABELS,
+  getStudyTierFromIndex,
+  getStudyTierIndex,
   type MiddleStudyTierDefinition,
   type StudyTier,
   type SuneungStudyTierDefinition,
@@ -18,6 +20,10 @@ export interface StudyQuestionMeta {
   source: 'local' | 'ai';
   sourceLabel: string;
   focusLabel: string;
+  difficultyTier: StudyTier;
+  difficultyBadge: string;
+  difficultyStep: number;
+  difficultyLevel?: number;
 }
 
 export interface StudyQuestionResponse<TQuestion extends StudyQuestionShape = StudyQuestionShape> {
@@ -49,6 +55,12 @@ interface MiddleDraft {
   teacherNote?: string;
   distractors?: number[];
   focusLabel?: string;
+}
+
+interface StudyGenerationOptions {
+  difficultyStep?: number;
+  recentTypes?: string[];
+  recentFocuses?: string[];
 }
 
 function hashSeed(seed: string): number {
@@ -123,6 +135,41 @@ function shouldUseLocalChallenge(seed: string, index: number, tier: StudyTier): 
   void index;
   void tier;
   return true;
+}
+
+function normalizeRecentValues(values?: string[]): string[] {
+  return Array.isArray(values)
+    ? values.filter((value): value is string => typeof value === 'string' && value.length > 0).slice(0, 4)
+    : [];
+}
+
+function getTargetComplexity(tier: StudyTier, difficultyStep: number): number {
+  if (tier === 'basic') return Math.min(3, 1 + difficultyStep);
+  if (tier === 'core') return Math.min(5, 3 + difficultyStep);
+  return Math.min(5, 4 + difficultyStep);
+}
+
+function selectCandidateWithVariety<T extends { complexity: number }>(
+  rng: () => number,
+  candidates: T[],
+  recentKeys: string[],
+  getKey: (candidate: T) => string,
+  targetComplexity: number
+): T | null {
+  if (candidates.length === 0) return null;
+
+  const complexEnough = candidates.filter((candidate) => candidate.complexity >= targetComplexity);
+  const complexityPool = complexEnough.length > 0 ? complexEnough : candidates;
+  const freshPool = complexityPool.filter((candidate) => !recentKeys.includes(getKey(candidate)));
+  const finalPool = freshPool.length > 0 ? freshPool : complexityPool;
+
+  return pick(rng, finalPool);
+}
+
+export function resolveAdaptiveStudyTier(baseTier: StudyTier, difficultyStep: number): StudyTier {
+  const baseIndex = getStudyTierIndex(baseTier);
+  const effectiveIndex = baseIndex + (difficultyStep > 0 ? Math.min(difficultyStep, 2) : 0);
+  return getStudyTierFromIndex(effectiveIndex);
 }
 
 function genSuneungChallengeLimit(rng: () => number): SuneungDraft {
@@ -327,20 +374,21 @@ function genSuneungLocalSeq(rng: () => number): SuneungDraft {
 interface SuneungGeneratorEntry {
   type: QType;
   tiers: StudyTier[];
+  complexity: 1 | 2 | 3 | 4 | 5;
   generate: (rng: () => number) => SuneungDraft;
 }
 
 const suneungLocalGenerators: SuneungGeneratorEntry[] = [
-  { type: 'exp', tiers: ['basic', 'core'], generate: genSuneungLocalExp },
-  { type: 'log', tiers: ['basic', 'core'], generate: genSuneungLocalLog },
-  { type: 'trig_basic', tiers: ['basic', 'core'], generate: genSuneungLocalTrig },
-  { type: 'limit_basic', tiers: ['basic', 'core'], generate: genSuneungChallengeLimit },
-  { type: 'seq', tiers: ['core', 'advanced'], generate: genSuneungLocalSeq },
-  { type: 'diff', tiers: ['core', 'advanced'], generate: genSuneungChallengeDiff },
-  { type: 'sigma_basic', tiers: ['core', 'advanced'], generate: genSuneungChallengeSigma },
-  { type: 'continuity', tiers: ['core', 'advanced'], generate: genSuneungChallengeContinuity },
-  { type: 'int', tiers: ['advanced'], generate: genSuneungChallengeIntegral },
-  { type: 'extrema', tiers: ['advanced'], generate: genSuneungChallengeExtrema },
+  { type: 'exp', tiers: ['basic', 'core'], complexity: 1, generate: genSuneungLocalExp },
+  { type: 'log', tiers: ['basic', 'core'], complexity: 1, generate: genSuneungLocalLog },
+  { type: 'trig_basic', tiers: ['basic', 'core'], complexity: 1, generate: genSuneungLocalTrig },
+  { type: 'limit_basic', tiers: ['basic', 'core'], complexity: 2, generate: genSuneungChallengeLimit },
+  { type: 'seq', tiers: ['core', 'advanced'], complexity: 3, generate: genSuneungLocalSeq },
+  { type: 'diff', tiers: ['core', 'advanced'], complexity: 3, generate: genSuneungChallengeDiff },
+  { type: 'sigma_basic', tiers: ['core', 'advanced'], complexity: 3, generate: genSuneungChallengeSigma },
+  { type: 'continuity', tiers: ['core', 'advanced'], complexity: 4, generate: genSuneungChallengeContinuity },
+  { type: 'int', tiers: ['advanced'], complexity: 5, generate: genSuneungChallengeIntegral },
+  { type: 'extrema', tiers: ['advanced'], complexity: 5, generate: genSuneungChallengeExtrema },
 ];
 
 function genMiddleChallengeCompute(rng: () => number): MiddleDraft {
@@ -686,24 +734,25 @@ function genMiddleChallengeBacktrackAdvanced(rng: () => number): MiddleDraft {
 interface MiddleChallengeGeneratorEntry {
   cognitiveType: CognitiveType;
   tiers: StudyTier[];
+  complexity: 1 | 2 | 3 | 4 | 5;
   generate: (rng: () => number) => MiddleDraft;
 }
 
 const middleChallengeGenerators: MiddleChallengeGeneratorEntry[] = [
-  { cognitiveType: 'reflex', tiers: ['basic'], generate: genMiddleBasicReflex },
-  { cognitiveType: 'compute', tiers: ['basic'], generate: genMiddleBasicComputeLocal },
-  { cognitiveType: 'pattern', tiers: ['basic'], generate: genMiddleBasicPatternLocal },
-  { cognitiveType: 'sense', tiers: ['basic'], generate: genMiddleBasicSenseLocal },
-  { cognitiveType: 'compute', tiers: ['core'], generate: genMiddleChallengeCompute },
-  { cognitiveType: 'inference', tiers: ['core'], generate: genMiddleChallengeInference },
-  { cognitiveType: 'geometry', tiers: ['core'], generate: genMiddleChallengeGeometry },
-  { cognitiveType: 'backtrack', tiers: ['core'], generate: genMiddleChallengeBacktrack },
-  { cognitiveType: 'logical', tiers: ['advanced'], generate: genMiddleChallengeLogical },
-  { cognitiveType: 'structure', tiers: ['advanced'], generate: genMiddleChallengeStructure },
-  { cognitiveType: 'think', tiers: ['advanced'], generate: genMiddleChallengeThink },
-  { cognitiveType: 'judgment', tiers: ['advanced'], generate: genMiddleChallengeJudgment },
-  { cognitiveType: 'geometry', tiers: ['advanced'], generate: genMiddleChallengeGeometryAdvanced },
-  { cognitiveType: 'backtrack', tiers: ['advanced'], generate: genMiddleChallengeBacktrackAdvanced },
+  { cognitiveType: 'reflex', tiers: ['basic'], complexity: 1, generate: genMiddleBasicReflex },
+  { cognitiveType: 'compute', tiers: ['basic'], complexity: 1, generate: genMiddleBasicComputeLocal },
+  { cognitiveType: 'pattern', tiers: ['basic'], complexity: 1, generate: genMiddleBasicPatternLocal },
+  { cognitiveType: 'sense', tiers: ['basic'], complexity: 1, generate: genMiddleBasicSenseLocal },
+  { cognitiveType: 'compute', tiers: ['core'], complexity: 2, generate: genMiddleChallengeCompute },
+  { cognitiveType: 'inference', tiers: ['core'], complexity: 3, generate: genMiddleChallengeInference },
+  { cognitiveType: 'geometry', tiers: ['core'], complexity: 3, generate: genMiddleChallengeGeometry },
+  { cognitiveType: 'backtrack', tiers: ['core'], complexity: 3, generate: genMiddleChallengeBacktrack },
+  { cognitiveType: 'logical', tiers: ['advanced'], complexity: 4, generate: genMiddleChallengeLogical },
+  { cognitiveType: 'structure', tiers: ['advanced'], complexity: 4, generate: genMiddleChallengeStructure },
+  { cognitiveType: 'think', tiers: ['advanced'], complexity: 5, generate: genMiddleChallengeThink },
+  { cognitiveType: 'judgment', tiers: ['advanced'], complexity: 4, generate: genMiddleChallengeJudgment },
+  { cognitiveType: 'geometry', tiers: ['advanced'], complexity: 5, generate: genMiddleChallengeGeometryAdvanced },
+  { cognitiveType: 'backtrack', tiers: ['advanced'], complexity: 5, generate: genMiddleChallengeBacktrackAdvanced },
 ];
 
 function createBaseSuneungQuestion(seed: string, index: number, tier: SuneungStudyTierDefinition): Question {
@@ -721,15 +770,24 @@ function createBaseMiddleQuestion(seed: string, index: number, tier: MiddleStudy
   return generateMiddleQuestion(`${seed}-base-fallback`, index, tier.allowedTypes);
 }
 
-export function createLocalSuneungStudyQuestion(seed: string, index: number, tier: SuneungStudyTierDefinition): StudyQuestionResponse<Question> {
+export function createLocalSuneungStudyQuestion(
+  seed: string,
+  index: number,
+  tier: SuneungStudyTierDefinition,
+  options: StudyGenerationOptions = {}
+): StudyQuestionResponse<Question> {
   if (shouldUseLocalChallenge(seed, index, tier.slug)) {
-    const rng = createRng(seed, index, `suneung-challenge-${tier.slug}`);
+    const difficultyStep = Math.max(0, Math.min(2, options.difficultyStep ?? 0));
+    const targetComplexity = getTargetComplexity(tier.slug, difficultyStep);
+    const recentTypes = normalizeRecentValues(options.recentTypes);
+    const rng = createRng(seed, index, `suneung-challenge-${tier.slug}-${difficultyStep}`);
     const candidates = suneungLocalGenerators.filter(
       ({ type, tiers }) => tiers.includes(tier.slug) && tier.allowedTypes.includes(type)
     );
 
-    if (candidates.length > 0) {
-      const draft = pick(rng, candidates).generate(rng);
+    const selected = selectCandidateWithVariety(rng, candidates, recentTypes, (candidate) => candidate.type, targetComplexity);
+    if (selected) {
+      const draft = selected.generate(rng);
       return {
         question: {
           id: `study-suneung-${tier.slug}-${index}`,
@@ -746,6 +804,10 @@ export function createLocalSuneungStudyQuestion(seed: string, index: number, tie
           source: 'local',
           sourceLabel: tier.slug === 'advanced' ? '교사용 심화 문항' : tier.slug === 'core' ? '교사용 응용 문항' : '교사용 기본 문항',
           focusLabel: draft.focusLabel || SUNEUNG_TYPE_LABELS[draft.type],
+          difficultyTier: tier.slug,
+          difficultyBadge: tier.badge,
+          difficultyStep,
+          difficultyLevel: tier.level,
         },
       };
     }
@@ -761,19 +823,32 @@ export function createLocalSuneungStudyQuestion(seed: string, index: number, tie
       source: 'local',
       sourceLabel: tier.slug === 'basic' ? '교사용 기본 문항' : '교사용 보조 문항',
       focusLabel: SUNEUNG_TYPE_LABELS[question.type as QType] ?? question.type,
+      difficultyTier: tier.slug,
+      difficultyBadge: tier.badge,
+      difficultyStep: Math.max(0, Math.min(2, options.difficultyStep ?? 0)),
+      difficultyLevel: tier.level,
     },
   };
 }
 
-export function createLocalMiddleStudyQuestion(seed: string, index: number, tier: MiddleStudyTierDefinition): StudyQuestionResponse<MiddleQuestion> {
+export function createLocalMiddleStudyQuestion(
+  seed: string,
+  index: number,
+  tier: MiddleStudyTierDefinition,
+  options: StudyGenerationOptions = {}
+): StudyQuestionResponse<MiddleQuestion> {
   if (shouldUseLocalChallenge(seed, index, tier.slug)) {
-    const rng = createRng(seed, index, `middle-challenge-${tier.slug}`);
+    const difficultyStep = Math.max(0, Math.min(2, options.difficultyStep ?? 0));
+    const targetComplexity = getTargetComplexity(tier.slug, difficultyStep);
+    const recentTypes = normalizeRecentValues(options.recentTypes);
+    const rng = createRng(seed, index, `middle-challenge-${tier.slug}-${difficultyStep}`);
     const candidates = middleChallengeGenerators.filter(
       ({ cognitiveType, tiers }) => tiers.includes(tier.slug) && tier.allowedTypes.includes(cognitiveType)
     );
 
-    if (candidates.length > 0) {
-      const draft = pick(rng, candidates).generate(rng);
+    const selected = selectCandidateWithVariety(rng, candidates, recentTypes, (candidate) => candidate.cognitiveType, targetComplexity);
+    if (selected) {
+      const draft = selected.generate(rng);
       return {
         question: {
           id: `study-middle-${tier.slug}-${index}`,
@@ -792,6 +867,10 @@ export function createLocalMiddleStudyQuestion(seed: string, index: number, tier
           source: 'local',
           sourceLabel: tier.slug === 'advanced' ? '교사용 심화 문항' : tier.slug === 'core' ? '교사용 응용 문항' : '교사용 기본 문항',
           focusLabel: draft.focusLabel || MIDDLE_TYPE_LABELS[draft.cognitiveType],
+          difficultyTier: tier.slug,
+          difficultyBadge: tier.badge,
+          difficultyStep,
+          difficultyLevel: draft.level,
         },
       };
     }
@@ -807,6 +886,10 @@ export function createLocalMiddleStudyQuestion(seed: string, index: number, tier
       source: 'local',
       sourceLabel: tier.slug === 'basic' ? '교사용 기본 문항' : '교사용 보조 문항',
       focusLabel: MIDDLE_TYPE_LABELS[question.cognitiveType] ?? question.cognitiveType,
+      difficultyTier: tier.slug,
+      difficultyBadge: tier.badge,
+      difficultyStep: Math.max(0, Math.min(2, options.difficultyStep ?? 0)),
+      difficultyLevel: question.level,
     },
   };
 }

@@ -6,6 +6,7 @@ import {
   createLocalMiddleStudyQuestion,
   createLocalSuneungStudyQuestion,
   getMiddleFocusLabel,
+  resolveAdaptiveStudyTier,
   getStudyTierConfig,
   getSuneungFocusLabel,
   sanitizeMiddleLevel,
@@ -140,6 +141,10 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
           source: 'ai',
           sourceLabel: 'AI 심화 출제',
           focusLabel: typeof parsed.focusLabel === 'string' ? parsed.focusLabel : getSuneungFocusLabel(type),
+          difficultyTier: tier,
+          difficultyBadge: suneungConfig.badge,
+          difficultyStep: 0,
+          difficultyLevel: suneungConfig.level,
         },
       };
     }
@@ -169,6 +174,10 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
         source: 'ai',
         sourceLabel: 'AI 심화 출제',
         focusLabel: typeof parsed.focusLabel === 'string' ? parsed.focusLabel : getMiddleFocusLabel(cognitiveType),
+        difficultyTier: tier,
+        difficultyBadge: middleConfig.badge,
+        difficultyStep: 0,
+        difficultyLevel: sanitizeMiddleLevel(parsed.level, middleConfig),
       },
     };
   } catch (error) {
@@ -182,6 +191,10 @@ export async function POST(req: Request) {
     const body = await req.json() as {
       track?: StudyTrack;
       tier?: StudyTier;
+      adaptiveTier?: StudyTier;
+      difficultyStep?: number;
+      recentTypes?: string[];
+      recentFocuses?: string[];
       seed?: string;
       index?: number;
     };
@@ -190,24 +203,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const config = getStudyTierConfig(body.track, body.tier);
+    const effectiveTier = body.adaptiveTier && getStudyTierConfig(body.track, body.adaptiveTier)
+      ? body.adaptiveTier
+      : resolveAdaptiveStudyTier(body.tier, typeof body.difficultyStep === 'number' ? body.difficultyStep : 0);
+
+    const config = getStudyTierConfig(body.track, effectiveTier);
     if (!config) {
       return NextResponse.json({ error: 'Unknown tier' }, { status: 404 });
     }
 
-    const useAi = shouldAttemptAiQuestion(body.track, body.tier, body.seed, body.index);
+    const useAi = shouldAttemptAiQuestion(body.track, effectiveTier, body.seed, body.index);
 
     if (useAi) {
-      const aiQuestion = await requestAiQuestion(body.track, body.tier, body.seed, body.index);
+      const aiQuestion = await requestAiQuestion(body.track, effectiveTier, body.seed, body.index);
       if (aiQuestion) {
         return NextResponse.json(aiQuestion);
       }
     }
 
     const fallback = body.track === 'suneung' && 'level' in config
-      ? createLocalSuneungStudyQuestion(body.seed, body.index, config)
+      ? createLocalSuneungStudyQuestion(body.seed, body.index, config, {
+        difficultyStep: typeof body.difficultyStep === 'number' ? body.difficultyStep : 0,
+        recentTypes: body.recentTypes,
+        recentFocuses: body.recentFocuses,
+      })
       : body.track === 'middle' && 'levelRange' in config
-        ? createLocalMiddleStudyQuestion(body.seed, body.index, config)
+        ? createLocalMiddleStudyQuestion(body.seed, body.index, config, {
+          difficultyStep: typeof body.difficultyStep === 'number' ? body.difficultyStep : 0,
+          recentTypes: body.recentTypes,
+          recentFocuses: body.recentFocuses,
+        })
         : null;
 
     if (!fallback) {
