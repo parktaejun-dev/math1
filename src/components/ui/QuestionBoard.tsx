@@ -87,7 +87,7 @@ export default function QuestionBoard({
         try {
             return (
                 <div
-                    className="max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-2 text-base font-bold leading-relaxed text-slate-900 sm:text-lg [&_.katex-display]:!my-0 [&_.katex-display]:!max-w-full [&_.katex-display]:!overflow-x-auto [&_.katex-display]:!overflow-y-hidden [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900"
+                    className="study-problem-latex max-w-full min-w-0 pb-2 text-base font-bold leading-relaxed text-slate-900 sm:text-lg [&_.katex-display]:!my-0 [&_.katex-display]:!max-w-full [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900"
                     dangerouslySetInnerHTML={{
                         __html: katex.renderToString(latex, {
                             throwOnError: false,

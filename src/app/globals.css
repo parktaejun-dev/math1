@@ -188,6 +188,33 @@ body {
   border-radius: 999px;
 }
 
+.study-problem-latex .katex-display {
+  overflow: visible !important;
+}
+
+.study-problem-latex .katex-display > .katex {
+  display: block;
+  max-width: 100%;
+}
+
+.study-problem-latex .katex-display > .katex > .katex-html {
+  white-space: normal;
+}
+
+.study-problem-latex .katex-display > .katex > .katex-html > .base {
+  margin-bottom: 0.15em;
+}
+
+.study-problem-latex .katex-display > .katex > .katex-html .mspace {
+  white-space: normal;
+}
+
+@media (max-width: 640px) {
+  .study-problem-latex .katex {
+    font-size: 1.2em !important;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
