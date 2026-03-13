@@ -79,11 +79,183 @@ export default function QuestionBoard({
         }
     };
 
+    const normalizeProblemFragment = (fragment: string) => fragment
+        .replace(/\\qquad/g, ' ')
+        .replace(/\\quad/g, ' ')
+        .replace(/\\,/g, ' ')
+        .replace(/\\:/g, ' ')
+        .replace(/\\;/g, ' ')
+        .replace(/\\!/g, '')
+        .replace(/~/g, ' ');
+
+    const renderMathFragment = (fragment: string, key: string, displayMode: boolean) => {
+        const normalized = normalizeProblemFragment(fragment).trim();
+        if (!normalized) {
+            return null;
+        }
+
+        try {
+            return (
+                <span
+                    key={key}
+                    className={
+                        displayMode
+                            ? 'study-problem-latex my-1 block max-w-full [&_.katex-display]:!my-0 [&_.katex-display]:!max-w-full [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900'
+                            : 'inline-block max-w-full align-middle [&_.katex]:!text-slate-900 [&_.katex_*]:!text-slate-900'
+                    }
+                    dangerouslySetInnerHTML={{
+                        __html: katex.renderToString(normalized, {
+                            throwOnError: false,
+                            displayMode,
+                        })
+                    }}
+                />
+            );
+        } catch {
+            return <React.Fragment key={key}>{normalized}</React.Fragment>;
+        }
+    };
+
+    const isPlainProblemText = (fragment: string) => !/[\\^_{}]/.test(fragment);
+
+    const isDisplayMathFragment = (fragment: string) => /\\begin\{(?:cases|aligned|array|matrix|pmatrix|bmatrix|vmatrix|Vmatrix)\}/.test(fragment);
+
+    const renderMixedProblemLatex = (latex: string) => {
+        if (!latex.includes('\\text{') && !latex.includes('\\begin{gather')) {
+            return null;
+        }
+
+        const tokens: Array<
+            | { kind: 'text'; value: string }
+            | { kind: 'inline-math'; value: string }
+            | { kind: 'display-math'; value: string }
+            | { kind: 'newline' }
+        > = [];
+
+        const pushFragment = (fragment: string) => {
+            if (!fragment) {
+                return;
+            }
+
+            const normalized = normalizeProblemFragment(fragment);
+            if (!normalized.trim()) {
+                return;
+            }
+
+            const lineParts = normalized.includes('\\begin{cases}')
+                ? [normalized.replace(/^\s*\\\\/, '').replace(/\\\\\s*$/, '').trim()]
+                : normalized.split(/\\\\/g);
+            lineParts.forEach((part, index) => {
+                const value = part.trim();
+                if (value) {
+                    if (isPlainProblemText(value)) {
+                        tokens.push({ kind: 'text', value });
+                    } else if (isDisplayMathFragment(value)) {
+                        tokens.push({ kind: 'display-math', value });
+                    } else {
+                        tokens.push({ kind: 'inline-math', value });
+                    }
+                }
+
+                if (index < lineParts.length - 1) {
+                    tokens.push({ kind: 'newline' });
+                }
+            });
+        };
+
+        const gatherMatch = latex.match(/\\begin\{gather\*?\}([\s\S]*)\\end\{gather\*?\}/);
+        const source = gatherMatch ? gatherMatch[1] : latex;
+        const textPattern = /\\text\{([^{}]*)\}/g;
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        while ((match = textPattern.exec(source)) !== null) {
+            pushFragment(source.slice(lastIndex, match.index));
+
+            if (match[1]) {
+                tokens.push({ kind: 'text', value: match[1] });
+            }
+
+            lastIndex = textPattern.lastIndex;
+        }
+
+        pushFragment(source.slice(lastIndex));
+
+        if (tokens.length === 0) {
+            return null;
+        }
+
+        const blocks: React.ReactNode[] = [];
+        let inlineNodes: React.ReactNode[] = [];
+        let paragraphIndex = 0;
+
+        const flushInlineNodes = () => {
+            if (inlineNodes.length === 0) {
+                return;
+            }
+
+            blocks.push(
+                <p
+                    key={`problem-line-${paragraphIndex}`}
+                    className="min-w-0 whitespace-pre-wrap break-words"
+                >
+                    {inlineNodes}
+                </p>
+            );
+            inlineNodes = [];
+            paragraphIndex += 1;
+        };
+
+        tokens.forEach((token, index) => {
+            if (token.kind === 'newline') {
+                flushInlineNodes();
+                return;
+            }
+
+            if (token.kind === 'display-math') {
+                flushInlineNodes();
+                const block = renderMathFragment(token.value, `problem-display-${index}`, true);
+                if (block) {
+                    blocks.push(block);
+                }
+                return;
+            }
+
+            if (token.kind === 'text') {
+                inlineNodes.push(
+                    <React.Fragment key={`problem-text-${index}`}>
+                        {token.value}
+                    </React.Fragment>
+                );
+                return;
+            }
+
+            const inlineMath = renderMathFragment(token.value, `problem-math-${index}`, false);
+            if (inlineMath) {
+                inlineNodes.push(inlineMath);
+            }
+        });
+
+        flushInlineNodes();
+
+        return (
+            <div className="max-w-full min-w-0 pb-2 text-base font-bold leading-relaxed text-slate-900 sm:text-lg">
+                {blocks}
+            </div>
+        );
+    };
+
     // Render KaTeX safely or inject GeometryCanvas
     const renderLatexOrSvg = (latex: string) => {
         if (latex.includes('[SVG_')) {
             return <GeometryCanvas latexParams={latex} />;
         }
+
+        const mixedLatex = renderMixedProblemLatex(latex);
+        if (mixedLatex) {
+            return mixedLatex;
+        }
+
         try {
             return (
                 <div
