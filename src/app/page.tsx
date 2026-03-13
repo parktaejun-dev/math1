@@ -334,29 +334,6 @@ export default function HomePage() {
                 {soundOn ? 'volume_up' : 'volume_off'}
               </span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => setIsStudyMenuOpen(true)}
-              className="group relative overflow-hidden rounded-[22px] border border-[#0f49bd]/20 bg-[linear-gradient(135deg,#fffef8_0%,#eef4ff_100%)] px-4 py-3 text-left text-slate-900 shadow-[0_18px_40px_rgba(15,73,189,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(15,73,189,0.22)]"
-              aria-label="공부하기 메뉴 열기"
-              aria-expanded={isStudyMenuOpen}
-            >
-              <span className="absolute inset-y-0 left-0 w-1.5 bg-[linear-gradient(180deg,#0f49bd_0%,#ffb347_100%)]" />
-              <span className="flex items-center gap-3 pl-2">
-                <span className="rounded-2xl bg-[#0f49bd] p-2.5 text-white shadow-[0_10px_20px_rgba(15,73,189,0.22)] transition-transform duration-200 group-hover:scale-105">
-                  <span className="material-symbols-outlined block text-[20px]">menu_book</span>
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Study Hub</span>
-                  <span className="mt-0.5 block font-serif text-lg font-bold tracking-tight text-slate-900">공부하기</span>
-                  <span className="block text-xs text-slate-500">학습 · 수능 연습 · 중등 연습</span>
-                </span>
-                <span className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-500 transition-colors group-hover:border-[#0f49bd] group-hover:text-[#0f49bd]">
-                  <span className="material-symbols-outlined block text-[20px]">arrow_forward</span>
-                </span>
-              </span>
-            </button>
           </div>
         </header>
 
