@@ -10,6 +10,28 @@ interface LeaderboardEntry {
   score: number;
 }
 
+interface HistoryEntry {
+  score?: number;
+  date?: string;
+}
+
+const studyMenuItems = [
+  {
+    href: '/practice',
+    label: '고등학교 학습',
+    description: '수능형 기본, 응용, 심화 세트를 시간 제한 없이 순서대로 풀 수 있습니다.',
+    accentClass: 'border-navy-official/20 bg-white text-navy-official',
+    icon: 'calculate',
+  },
+  {
+    href: '/middle/practice',
+    label: '중학교 학습',
+    description: '학교 시험형 기본 문제부터 사고력 중심 심화 세트까지 단계별로 정리했습니다.',
+    accentClass: 'border-amber-200 bg-amber-50 text-amber-700',
+    icon: 'school',
+  },
+] as const;
+
 export default function HomePage() {
   const router = useRouter();
   const [suneungLeaderboard, setSuneungLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -19,13 +41,14 @@ export default function HomePage() {
 
   const [school, setSchool] = useState('');
   const [name, setName] = useState('');
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [showNotice, setShowNotice] = useState(false);
+  const [isStudyMenuOpen, setIsStudyMenuOpen] = useState(false);
   const audioPlayed = useRef(false);
 
   // Stats State
   const [personalBest, setPersonalBest] = useState<number>(0);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [achievements, setAchievements] = useState<string[]>([]);
 
   const handleNoticeToggle = () => {
@@ -39,8 +62,6 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    setSoundOn(isSoundEnabled());
-
     Promise.all([
       fetch('/api/leaderboard').then(r => r.json().catch(() => ({}))),
       fetch('/api/leaderboard/middle').then(r => r.json().catch(() => ({})))
@@ -52,20 +73,48 @@ export default function HomePage() {
       })
       .catch(() => setIsLoading(false));
 
-    setSchool(localStorage.getItem('suneung1_school') || '');
-    setName(localStorage.getItem('suneung1_name') || '');
+    const restoreId = window.setTimeout(() => {
+      setSchool(localStorage.getItem('suneung1_school') || '');
+      setName(localStorage.getItem('suneung1_name') || '');
+      setPersonalBest(parseInt(localStorage.getItem('suneung1_pb') || '0', 10));
 
-    // Load Stats
-    setPersonalBest(parseInt(localStorage.getItem('suneung1_pb') || '0', 10));
-    try {
-      const hist = JSON.parse(localStorage.getItem('suneung1_history') || '[]');
-      setHistory(Array.isArray(hist) ? hist : []);
-    } catch (e) { setHistory([]); }
-    try {
-      const ach = JSON.parse(localStorage.getItem('suneung1_achievements') || '[]');
-      setAchievements(Array.isArray(ach) ? ach : []);
-    } catch (e) { setAchievements([]); }
+      try {
+        const hist = JSON.parse(localStorage.getItem('suneung1_history') || '[]');
+        setHistory(Array.isArray(hist) ? hist : []);
+      } catch {
+        setHistory([]);
+      }
+
+      try {
+        const ach = JSON.parse(localStorage.getItem('suneung1_achievements') || '[]');
+        setAchievements(Array.isArray(ach) ? ach : []);
+      } catch {
+        setAchievements([]);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(restoreId);
   }, []);
+
+  useEffect(() => {
+    if (!isStudyMenuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsStudyMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isStudyMenuOpen]);
 
   const handleStart = () => {
     let devId = localStorage.getItem('suneung1_deviceId');
@@ -101,6 +150,63 @@ export default function HomePage() {
 
   return (
     <div className="font-sans text-ink flex flex-col items-center py-8 min-h-screen bg-[#e8e8e8] bg-[url(https://lh3.googleusercontent.com/aida-public/AB6AXuAJKyLrtvjl4ZoLlzPAtau-RoXWcpoih6W0vJa1ZzMVZjinzRRXaNprxUrjuKAKkHq84QUaO6-igY-ehkc24E0PcVQnNIhEARY9brsXLmE_9_3zcibC9HTglNw9TzPOTTtUeN-1TOa3Gdz1Oqga_w-Sjn6ehZimYwj1yXKsssnZ4iATX3WY_EoljGYEUSuMd6bypBM1nJeJk7Y3T-e9-WpP9Hqq4OeK9QsLoqb9PWIVsLUmI-xNdtj4ChLiemyPZoB_FEiQHCHo1Ks)]">
+      {isStudyMenuOpen ? (
+        <div className="fixed inset-0 z-50" aria-hidden={!isStudyMenuOpen}>
+          <button
+            type="button"
+            onClick={() => setIsStudyMenuOpen(false)}
+            className="absolute inset-0 bg-black/35"
+            aria-label="학습 메뉴 닫기"
+          />
+          <aside className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col border-l border-slate-300 bg-[#fbfaf6] shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-sans text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Study Menu</p>
+                  <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900">학습 페이지 선택</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    타임어택과 분리된 공부용 서브페이지입니다. 학교급별로 바로 나눠서 들어가면 됩니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsStudyMenuOpen(false)}
+                  className="rounded-full border border-slate-300 bg-white p-2 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-800"
+                  aria-label="학습 메뉴 닫기 버튼"
+                >
+                  <span className="material-symbols-outlined block text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-6">
+              {studyMenuItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsStudyMenuOpen(false)}
+                  className={`block rounded-3xl border p-5 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg ${item.accentClass}`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-2xl border border-current/15 bg-white/80 p-3">
+                      <span className="material-symbols-outlined block text-[28px]">{item.icon}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-serif text-2xl font-bold tracking-tight">{item.label}</div>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
+                        <span>바로 이동</span>
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
       <div className="bg-paper shadow-paper border border-[#d4d4d4] w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 mx-auto relative overflow-hidden">
         <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8 relative">
           <div className="text-sm font-serif">
@@ -108,24 +214,37 @@ export default function HomePage() {
             <span className="font-bold text-lg">수학 영역</span>
           </div>
 
-          <button
-            onClick={() => {
-              const newState = toggleSound();
-              setSoundOn(newState);
-              if (newState) playSchoolBell();
-            }}
-            className="absolute -top-4 right-0 mt-4 sm:relative sm:top-0 sm:mt-0 px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm"
-            aria-label="Toggle Sound"
-          >
-            <span className="material-symbols-outlined text-[20px] text-gray-700">
-              {soundOn ? 'volume_up' : 'volume_off'}
-            </span>
-          </button>
-
-          <div className="text-right hidden sm:block">
-            <div className="border border-black px-4 py-1 text-sm font-serif inline-block">
-              제 2 교시
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <div className="text-right hidden sm:block">
+              <div className="border border-black px-4 py-1 text-sm font-serif inline-block">
+                제 2 교시
+              </div>
             </div>
+
+            <button
+              onClick={() => {
+                const newState = toggleSound();
+                setSoundOn(newState);
+                if (newState) playSchoolBell();
+              }}
+              className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm"
+              aria-label="소리 켜기 또는 끄기"
+            >
+              <span className="material-symbols-outlined text-[20px] text-gray-700">
+                {soundOn ? 'volume_up' : 'volume_off'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsStudyMenuOpen(true)}
+              className="flex items-center gap-2 rounded border border-slate-900 bg-slate-900 px-3 py-2 text-white shadow-sm transition-colors hover:bg-slate-700"
+              aria-label="학습 메뉴 열기"
+              aria-expanded={isStudyMenuOpen}
+            >
+              <span className="material-symbols-outlined text-[20px]">menu</span>
+              <span className="hidden font-sans text-sm font-bold sm:inline">학습 메뉴</span>
+            </button>
           </div>
         </header>
 
@@ -190,47 +309,33 @@ export default function HomePage() {
             </div>
 
             {/* Suneung Modes */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <button onClick={handleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+            <div className="flex w-full">
+              <button onClick={handleStart} className="group relative px-10 py-4 rounded-md shadow-sm border-2 border-navy-official text-navy-official hover:bg-navy-official hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">수능 실전</span>
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">edit_square</span>
                 </div>
               </button>
-
-              <button onClick={() => router.push('/practice')} className="flex-1 group relative px-6 py-4 rounded-md shadow-sm border-2 border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md transition-all duration-300 w-full block text-center h-[72px]">
-                <div className="flex items-center justify-center space-x-2 h-full">
-                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">수능 공부 페이지</span>
-                  <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">menu_book</span>
-                </div>
-              </button>
             </div>
 
             {/* Middle School Modes */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full border-t border-slate-200 pt-8 md:w-auto">
-              <button onClick={handleMiddleStart} className="flex-[2] group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
+            <div className="mt-8 flex w-full border-t border-slate-200 pt-8">
+              <button onClick={handleMiddleStart} className="group relative px-10 py-4 rounded-md shadow-sm border-2 border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white hover:shadow-md transition-all duration-300 w-full block text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <span className="font-serif font-bold text-2xl tracking-widest whitespace-nowrap">중등 실전</span>
                   <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">bolt</span>
                 </div>
               </button>
-
-              <Link href="/middle/practice" className="flex-1 w-full sm:w-auto block h-[72px]">
-                <button className="flex items-center justify-center space-x-2 px-6 py-4 rounded-md shadow-sm border-2 border-transparent bg-amber-50 text-amber-600 hover:bg-amber-100 hover:shadow-md transition-all duration-300 w-full h-full">
-                  <span className="font-serif font-bold text-xl tracking-widest whitespace-nowrap">중등 공부 페이지</span>
-                  <span className="material-symbols-outlined text-xl">menu_book</span>
-                </button>
-              </Link>
             </div>
             <div className="w-full rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-slate-900 p-2 text-white">
-                  <span className="material-symbols-outlined block leading-none">auto_stories</span>
+                  <span className="material-symbols-outlined block leading-none">menu</span>
                 </div>
                 <div>
-                  <div className="font-serif text-lg font-bold text-slate-900">공부형 서브페이지 추가</div>
+                  <div className="font-serif text-lg font-bold text-slate-900">학습 메뉴 분리</div>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    연습 모드는 이제 시간 제한 없이 기본, 응용, 고난도 세트로 이어서 푸는 공부 페이지로 연결됩니다.
+                    공부 페이지는 우측 상단 햄버거 메뉴 안으로 분리했습니다. 메뉴에서 `고등학교 학습`, `중학교 학습` 중 원하는 흐름으로 바로 들어가면 됩니다.
                   </p>
                 </div>
               </div>
