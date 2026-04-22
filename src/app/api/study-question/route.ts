@@ -151,9 +151,11 @@ async function requestAiQuestion(track: StudyTrack, tier: StudyTier, seed: strin
 
     const middleConfig = getMiddleStudyTier(tier);
     if (!middleConfig) return null;
-    const cognitiveType = typeof parsed.cognitiveType === 'string' && middleConfig.allowedTypes.includes(parsed.cognitiveType as CognitiveType)
+    const validCognitiveTypes = ['compute', 'pattern', 'geometry', 'inference', 'structure', 'sense', 'judgment', 'backtrack', 'logical', 'reflex', 'think'];
+    const fallbackCognitive = (middleConfig.allowedTypes.find(t => validCognitiveTypes.includes(t)) || 'compute') as CognitiveType;
+    const cognitiveType: CognitiveType = typeof parsed.cognitiveType === 'string' && validCognitiveTypes.includes(parsed.cognitiveType)
       ? parsed.cognitiveType as CognitiveType
-      : middleConfig.allowedTypes[0];
+      : fallbackCognitive;
 
     const question: MiddleQuestion = {
       id: `study-middle-ai-${tier}-${index}`,
