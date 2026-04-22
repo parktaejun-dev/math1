@@ -130,9 +130,9 @@ export const middleStudyTiers: MiddleStudyTierDefinition[] = [
     title: '인수분해와 제곱근',
     description: '가장 많이 막히는 인수분해와 제곱근을 집중적으로 훈련하여 약점을 극복합니다.',
     recommendedFor: '인수분해와 제곱근의 기본 계산이 아직 흔들리는 학생',
-    topics: ['인수분해', '제곱근 근사값', '이차방정식 근'],
+    topics: ['인수분해', '제곱근 근사값'],
     focusPoints: ['제곱근의 뜻과 성질 익히기', '완전제곱식과 인수분해 공식 암기', '식을 거꾸로 유추하는 감각 키우기'],
-    allowedTypes: ['factorization', 'sqrt_approx', 'quadratic_roots'],
+    allowedTypes: ['factorization', 'sqrt_approx'],
     levelRange: { min: 3, max: 4 },
   },
 ];
