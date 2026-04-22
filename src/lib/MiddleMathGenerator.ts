@@ -837,7 +837,7 @@ function genSquareRootCompute(rng: () => number): Omit<MiddleQuestion, 'id' | 'c
                 latex: `\\sqrt{${p.x}} \\times \\sqrt{${p.y}} = ?`,
                 answer: p.ans,
                 type: 'sqrt_compute',
-                cognitiveType: 'compute',
+                cognitiveType: 'compute' as CognitiveType,
                 level: 3 as const,
                 hint: `근호 안의 수끼리 먼저 곱한 뒤, 완전제곱수를 밖으로 꺼내세요.`
             };
@@ -856,7 +856,7 @@ function genSquareRootCompute(rng: () => number): Omit<MiddleQuestion, 'id' | 'c
                 latex: `\\sqrt{${v1}} ${op} \\sqrt{${v2}} = k\\sqrt{${base}} \\text{ 일 때, } k=?`,
                 answer: ans,
                 type: 'sqrt_compute',
-                cognitiveType: 'compute',
+                cognitiveType: 'compute' as CognitiveType,
                 level: 3 as const,
                 hint: `루트 안의 제곱수를 밖으로 꺼내어 동류항처럼 계산하세요.`
             };
