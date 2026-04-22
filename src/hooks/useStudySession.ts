@@ -122,9 +122,11 @@ export function useStudySession<TQuestion extends StudyQuestionShape>({
   const updateAdaptiveDifficulty = useCallback((wasCorrect: boolean) => {
     const baseTierIndex = getStudyTierIndex(tier);
     const currentTierIndex = getStudyTierIndex(adaptiveTierRef.current);
-    const nextTierIndex = wasCorrect
-      ? Math.min(2, currentTierIndex + 1)
-      : Math.max(baseTierIndex, currentTierIndex - 1);
+    const nextTierIndex = tier === 'emergency'
+      ? currentTierIndex
+      : wasCorrect
+        ? Math.min(2, currentTierIndex + 1)
+        : Math.max(baseTierIndex, currentTierIndex - 1);
     const nextStep = wasCorrect
       ? Math.min(2, difficultyStepRef.current + 1)
       : Math.max(0, difficultyStepRef.current - 1);
