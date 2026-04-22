@@ -819,19 +819,50 @@ function genCircleSector(rng: () => number): Omit<MiddleQuestion, 'id' | 'choice
     };
 }
 
-// [Level 4 - sense] Square Root Approx
-function genSquareRootApprox(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
-    const bases = [3, 5, 6, 7, 10, 11, 14, 15, 20, 30, 40, 50, 60, 80];
-    const n = bases[Math.floor(rng() * bases.length)];
-    const ans = Math.floor(Math.sqrt(n));
-    return {
-        latex: `\\text{정수 } a\\text{에 대하여} \\\\ a < \\sqrt{${n}} < a+1\\text{ 일 때, } a=?`,
-        answer: ans,
-        type: 'sqrt_approx',
-        cognitiveType: 'sense',
-        level: 4,
-        hint: `루트 안의 수와 가장 가까운 완전제곱수를 찾으세요.`
-    };
+// [Level 3 - compute] Square Root Compute
+function genSquareRootCompute(rng: () => number): Omit<MiddleQuestion, 'id' | 'choices'> {
+    const types = [
+        () => {
+            const bases = [
+                {x: 2, y: 8, ans: 4},
+                {x: 3, y: 12, ans: 6},
+                {x: 2, y: 18, ans: 6},
+                {x: 8, y: 18, ans: 12},
+                {x: 27, y: 3, ans: 9},
+                {x: 5, y: 20, ans: 10},
+                {x: 24, y: 6, ans: 12}
+            ];
+            const p = bases[Math.floor(rng() * bases.length)];
+            return {
+                latex: `\\sqrt{${p.x}} \\times \\sqrt{${p.y}} = ?`,
+                answer: p.ans,
+                type: 'sqrt_compute',
+                cognitiveType: 'compute',
+                level: 3 as const,
+                hint: `근호 안의 수끼리 먼저 곱한 뒤, 완전제곱수를 밖으로 꺼내세요.`
+            };
+        },
+        () => {
+            const bases = [2, 3, 5];
+            const base = bases[Math.floor(rng() * bases.length)];
+            const c1 = Math.floor(rng() * 3) + 2;
+            const c2 = Math.floor(rng() * 2) + 1;
+            const v1 = c1 * c1 * base;
+            const v2 = c2 * c2 * base;
+            const isAdd = rng() > 0.5;
+            const ans = isAdd ? c1 + c2 : c1 - c2;
+            const op = isAdd ? '+' : '-';
+            return {
+                latex: `\\sqrt{${v1}} ${op} \\sqrt{${v2}} = k\\sqrt{${base}} \\text{ 일 때, } k=?`,
+                answer: ans,
+                type: 'sqrt_compute',
+                cognitiveType: 'compute',
+                level: 3 as const,
+                hint: `루트 안의 제곱수를 밖으로 꺼내어 동류항처럼 계산하세요.`
+            };
+        }
+    ];
+    return types[Math.floor(rng() * types.length)]();
 }
 
 // [Level 3 - pattern] Polynomial Expansion
@@ -883,7 +914,7 @@ const generators = [
     genSystemEq,
     genPolynomialValue,
     genCircleSector,
-    genSquareRootApprox,
+    genSquareRootCompute,
     genPolynomialExpansion
 ];
 
