@@ -887,17 +887,17 @@ const generators = [
     genPolynomialExpansion
 ];
 
-export function generateMiddleQuestion(seed: string, index: number, allowedTypes?: CognitiveType[]): MiddleQuestion {
+export function generateMiddleQuestion(seed: string, index: number, allowedTypes?: string[]): MiddleQuestion {
     const combinedSeed = hashSeed(`${seed}-${index}`);
     const rng = mulberry32(combinedSeed);
 
-    // Filter available generators by allowed CognitiveTypes, if specified
+    // Filter available generators by allowed types (cognitive type or exact type), if specified
     let available = generators;
     if (allowedTypes && allowedTypes.length > 0) {
         available = generators.filter(g => {
-            // Create a dummy run to check CognitiveType
+            // Create a dummy run to check CognitiveType and exact type
             const dummy = g(rng);
-            return allowedTypes.includes(dummy.cognitiveType);
+            return allowedTypes.includes(dummy.cognitiveType) || allowedTypes.includes(dummy.type);
         });
         if (available.length === 0) available = generators; // Fallback
     }

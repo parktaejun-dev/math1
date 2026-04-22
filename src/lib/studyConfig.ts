@@ -1,8 +1,8 @@
 import type { QType } from './MathGenerator';
 import type { CognitiveType } from './MiddleMathGenerator';
 
-export type StudyTier = 'basic' | 'core' | 'advanced';
-export const studyTierOrder: StudyTier[] = ['basic', 'core', 'advanced'];
+export type StudyTier = 'basic' | 'core' | 'advanced' | 'emergency';
+export const studyTierOrder: StudyTier[] = ['basic', 'core', 'advanced', 'emergency'];
 
 export interface BaseStudyTierDefinition {
   slug: StudyTier;
@@ -20,7 +20,7 @@ export interface SuneungStudyTierDefinition extends BaseStudyTierDefinition {
 }
 
 export interface MiddleStudyTierDefinition extends BaseStudyTierDefinition {
-  allowedTypes: CognitiveType[];
+  allowedTypes: string[];
   levelRange: {
     min: 1 | 2 | 3 | 4 | 5;
     max: 1 | 2 | 3 | 4 | 5;
@@ -123,6 +123,17 @@ export const middleStudyTiers: MiddleStudyTierDefinition[] = [
     focusPoints: ['조건을 쪼개고 다시 합치는 사고 훈련', '복합 문제를 단계별로 나누어 풀기', '정답보다 풀이 구조를 먼저 점검하기'],
     allowedTypes: ['think', 'logical', 'geometry', 'structure', 'judgment', 'backtrack'],
     levelRange: { min: 3, max: 5 },
+  },
+  {
+    slug: 'emergency',
+    badge: '긴급처방',
+    title: '인수분해와 제곱근',
+    description: '가장 많이 막히는 인수분해와 제곱근을 집중적으로 훈련하여 약점을 극복합니다.',
+    recommendedFor: '인수분해와 제곱근의 기본 계산이 아직 흔들리는 학생',
+    topics: ['인수분해', '제곱근 근사값', '이차방정식 근'],
+    focusPoints: ['제곱근의 뜻과 성질 익히기', '완전제곱식과 인수분해 공식 암기', '식을 거꾸로 유추하는 감각 키우기'],
+    allowedTypes: ['factorization', 'sqrt_approx', 'quadratic_roots'],
+    levelRange: { min: 3, max: 4 },
   },
 ];
 

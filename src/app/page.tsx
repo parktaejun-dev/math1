@@ -54,6 +54,14 @@ const studyMenuItems = [
     accentClass: 'border-amber-200 bg-[linear-gradient(135deg,#fffaf0_0%,#fff1d6_100%)] text-amber-700',
     icon: 'school',
   },
+  {
+    kind: 'link',
+    href: '/middle/practice/emergency',
+    label: '긴급처방 (중등)',
+    description: '중학생들이 가장 어려워하는 인수분해와 제곱근을 집중적으로 훈련합니다.',
+    accentClass: 'border-rose-200 bg-[linear-gradient(135deg,#fff5f5_0%,#ffe4e6_100%)] text-rose-700',
+    icon: 'local_hospital',
+  },
 ] as const satisfies readonly DrawerLinkItem[];
 
 export default function HomePage() {
@@ -434,6 +442,7 @@ export default function HomePage() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="rounded-full border border-[#bfd0ff] bg-white px-3 py-1 text-xs font-semibold text-[#0f49bd]">고등학교 학습</span>
                     <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-700">중학교 학습</span>
+                    <span className="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-semibold text-rose-700">긴급처방</span>
                     <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">수능 연습</span>
                     <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold text-orange-700">중등 연습</span>
                   </div>
